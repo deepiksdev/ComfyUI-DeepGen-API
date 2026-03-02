@@ -76,11 +76,8 @@ class ImageNode:
     ):
         arguments = {
             "prompt": prompt,
-            "negative_prompt": negative_prompt,
-            "steps": 28,
-            "guidance_scale": 3.5,
             "num_images": num_images,
-            "enable_safety_checker": True,
+            "negative_prompt": negative_prompt,
             "output_format": output_format,
         }
 
