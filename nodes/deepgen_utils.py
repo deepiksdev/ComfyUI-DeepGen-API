@@ -572,51 +572,36 @@ class ResultProcessor:
 
     @staticmethod
     def process_video_result(result):
-        """Process video generation result and return tensor of frames."""
-        import tempfile
-        import cv2
+        """Process video generation result and return path as VIDEO type."""
         import requests
         import os
+        import folder_paths
+        import uuid
         import traceback
         try:
             video_urls = ResultProcessor._extract_video_urls(result)
             if not video_urls:
-                return ResultProcessor.create_blank_image()
+                return ("Error: No video found in result",)
             
             video_url = video_urls[0]
             response = requests.get(video_url, stream=True)
             if response.status_code != 200:
                 raise ValueError(f"Failed to download video from {video_url}")
             
-            with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as f:
+            # Download to ComfyUI's standard temp directory
+            temp_dir = folder_paths.get_temp_directory()
+            filename = f"deepgen_video_{uuid.uuid4().hex[:8]}.mp4"
+            filepath = os.path.join(temp_dir, filename)
+            
+            with open(filepath, 'wb') as f:
                 for chunk in response.iter_content(chunk_size=8192):
                     f.write(chunk)
-                temp_path = f.name
                 
-            cap = cv2.VideoCapture(temp_path)
-            frames = []
-            while cap.isOpened():
-                ret, frame = cap.read()
-                if not ret:
-                    break
-                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                frames.append(frame.astype(np.float32) / 255.0)
-            cap.release()
-            
-            try:
-                os.remove(temp_path)
-            except Exception:
-                pass
-            
-            if not frames:
-                return ResultProcessor.create_blank_image()
-                
-            video_tensor = torch.from_numpy(np.stack(frames, axis=0))
-            return (video_tensor,)
+            return (filepath,)
             
         except Exception as e:
             traceback.print_exc()
-            return ResultProcessor.create_blank_image()
+            return (f"Error: {str(e)}",)
 
     @staticmethod
     def create_blank_image():
@@ -825,7 +810,7 @@ class DeepGenApiHandler:
     def handle_video_generation_error(model_name, error):
         """Handle video generation errors consistently."""
         #rint(f"Error generating video with {model_name}: {str(error)}")
-        return ResultProcessor.create_blank_image()
+        return ("Error: Unable to generate video.",)
 
     @staticmethod
     def handle_image_generation_error(model_name, error):
