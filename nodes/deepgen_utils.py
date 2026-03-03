@@ -572,18 +572,54 @@ class ResultProcessor:
 
     @staticmethod
     def process_video_result(result):
-        """Process video generation result and return tuple of URLs."""
+        """Process video generation result and return path as VIDEO type."""
+        import requests
+        import os
+        import folder_paths
+        import uuid
+        import traceback
+        
+        class ComfyVideoMock:
+            def __init__(self, filepath, width=512, height=512):
+                self.filepath = filepath
+                self.width = width
+                self.height = height
+                
+            def get_dimensions(self):
+                # Returns shape (width, height)
+                return (self.width, self.height)
+                
+            def save_to(self, filepath, **kwargs):
+                import shutil
+                shutil.copy2(self.filepath, filepath)
+                
+            def __str__(self):
+                return self.filepath
+                
         try:
             video_urls = ResultProcessor._extract_video_urls(result)
             if not video_urls:
-                #rint(f"No videos found in result: {result}")
                 return ("Error: No video found in result",)
             
-            # Return as tuple of strings (first one if only one expected by most nodes)
-            return (video_urls[0],)
+            video_url = video_urls[0]
+            response = requests.get(video_url, stream=True)
+            if response.status_code != 200:
+                raise ValueError(f"Failed to download video from {video_url}")
+            
+            # Download to ComfyUI's standard temp directory
+            temp_dir = folder_paths.get_temp_directory()
+            filename = f"deepgen_video_{uuid.uuid4().hex[:8]}.mp4"
+            filepath = os.path.join(temp_dir, filename)
+            
+            with open(filepath, 'wb') as f:
+                for chunk in response.iter_content(chunk_size=8192):
+                    f.write(chunk)
+                
+            return (ComfyVideoMock(filepath),)
+            
         except Exception as e:
-            #rint(f"Error processing video result: {str(e)}")
-            return (f"Error: Processing video result failed: {str(e)}",)
+            traceback.print_exc()
+            return (f"Error: {str(e)}",)
 
     @staticmethod
     def create_blank_image():
