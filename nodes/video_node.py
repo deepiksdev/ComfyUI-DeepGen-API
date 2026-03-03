@@ -38,9 +38,6 @@ class VideoNode:
                 "prompt": ("STRING", {"default": "", "multiline": True}),
             },
             "optional": {
-                "image": ("IMAGE",),
-                "start_image": ("IMAGE",),
-                "end_image": ("IMAGE",),
                 "duration": (["5", "10"], {"default": "5"}),
                 "aspect_ratio": (["16:9", "9:16", "1:1", "4:3", "3:4", "21:9", "9:21"], {"default": "16:9"}),
                 "loop": ("BOOLEAN", {"default": False}),
@@ -64,9 +61,6 @@ class VideoNode:
         self,
         model,
         prompt,
-        image=None,
-        start_image=None,
-        end_image=None,
         duration="5",
         aspect_ratio="16:9",
         loop=False,
@@ -84,26 +78,6 @@ class VideoNode:
                 "loop": loop,
                 "queue": True,
             }
-
-            # Handle images
-            if image is not None:
-                img_url = ImageUtils.upload_image(image)
-                if img_url:
-                    # Some models use 'image_url', some 'start_image_url'
-                    arguments["image_url"] = img_url
-                    arguments["start_image_url"] = img_url
-            
-            if start_image is not None:
-                img_url = ImageUtils.upload_image(start_image)
-                if img_url:
-                    arguments["start_image_url"] = img_url
-                    if "image_url" not in arguments:
-                        arguments["image_url"] = img_url
-
-            if end_image is not None:
-                img_url = ImageUtils.upload_image(end_image)
-                if img_url:
-                    arguments["end_image_url"] = img_url
 
             images_to_process = []
             videos_to_process = []
