@@ -196,20 +196,25 @@ class VideoNode:
                 video_paths = [ResultProcessor.process_video_result(r)[0] for r in results]
                 # Returning first one as primary, though we could return a list if we changed RETURN_TYPES
                 
-                def get_dict(r):
-                    obj = r[0] if isinstance(r, list) and len(r) > 0 else r
-                    return obj if isinstance(obj, dict) else getattr(obj, '__dict__', {}) or {}
-                
-                agent_alias = get_dict(results[0]).get("agent_alias", "") if results else ""
+                def _get_attr(obj, key, default=None):
+                    if isinstance(obj, dict): return obj.get(key, default)
+                    return getattr(obj, key, default)
+
+                def _get_res_obj(r):
+                    return r[0] if isinstance(r, list) and len(r) > 0 else r
+
+                res0 = _get_res_obj(results[0]) if results else {}
+                agent_alias = _get_attr(res0, "agent_alias", "")
                 prefixed_model = f"{output_prefix}_{agent_alias}" if output_prefix else agent_alias
                 
                 credits_out = 0.0
                 for r in results:
-                    obj = get_dict(r)
-                    cred = obj.get("total_credits_used")
+                    obj = _get_res_obj(r)
+                    cred = _get_attr(obj, "total_credits_used")
                     if cred is None:
-                        cred = obj.get("output", {}).get("total_credits_used", obj.get("aiCredits", 0.0))
-                    credits_out += float(cred)
+                        out_obj = _get_attr(obj, "output", {})
+                        cred = _get_attr(out_obj, "total_credits_used", _get_attr(obj, "aiCredits", 0.0))
+                    credits_out += float(cred or 0.0)
                     
                 return (video_paths[0], prefixed_model, credits_out)
             else:
@@ -217,17 +222,20 @@ class VideoNode:
                 result = self._poll_results([result], endpoint)[0]
                 
                 res_obj = result[0] if isinstance(result, list) and len(result) > 0 else result
-                if not isinstance(res_obj, dict):
-                    res_obj = getattr(res_obj, '__dict__', {}) or {}
-                
                 video_path = ResultProcessor.process_video_result(result)[0]
-                agent_alias = res_obj.get("agent_alias", "")
+                
+                def _get_attr(obj, key, default=None):
+                    if isinstance(obj, dict): return obj.get(key, default)
+                    return getattr(obj, key, default)
+                
+                agent_alias = _get_attr(res_obj, "agent_alias", "")
                 prefixed_model = f"{output_prefix}_{agent_alias}" if output_prefix else agent_alias
                 
-                cred = res_obj.get("total_credits_used")
+                cred = _get_attr(res_obj, "total_credits_used")
                 if cred is None:
-                    cred = res_obj.get("output", {}).get("total_credits_used", res_obj.get("aiCredits", 0.0))
-                credits_out = float(cred)
+                    out_obj = _get_attr(res_obj, "output", {})
+                    cred = _get_attr(out_obj, "total_credits_used", _get_attr(res_obj, "aiCredits", 0.0))
+                credits_out = float(cred or 0.0)
                 
                 return (video_path, prefixed_model, credits_out)
 

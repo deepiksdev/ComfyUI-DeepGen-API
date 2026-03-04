@@ -206,13 +206,20 @@ class ImageNode:
             # The API returns a list [WebResponse(...)] or a dict depending on endpoint.
             # We better extract properties safely:
             res_obj = result[0] if isinstance(result, list) and len(result) > 0 else result
-            if not isinstance(res_obj, dict):
-                res_obj = getattr(res_obj, '__dict__', {}) or {}
-            
             img_tensor = ResultProcessor.process_image_result(result)[0]
-            agent_alias = res_obj.get("agent_alias", "")
+            
+            def _get_attr(obj, key, default=None):
+                if isinstance(obj, dict): return obj.get(key, default)
+                return getattr(obj, key, default)
+                
+            agent_alias = _get_attr(res_obj, "agent_alias", "")
             prefixed_model = f"{output_prefix}_{agent_alias}" if output_prefix else agent_alias
-            credits_out = float(res_obj.get("total_credits_used", 0.0))
+            
+            cred = _get_attr(res_obj, "total_credits_used")
+            if cred is None:
+                out_obj = _get_attr(res_obj, "output", {})
+                cred = _get_attr(out_obj, "total_credits_used", _get_attr(res_obj, "aiCredits", 0.0))
+            credits_out = float(cred or 0.0)
             return (img_tensor, prefixed_model, credits_out)
         except ValueError as ve:
             raise ve
