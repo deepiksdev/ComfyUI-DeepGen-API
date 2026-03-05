@@ -13,6 +13,7 @@ class ImageNode:
     def INPUT_TYPES(cls):
         # Load models from CSV
         cls.models_list = []
+        cls.models_map = {}
         cls.supported_inputs_map = {}
 
         csv_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "models.csv")
