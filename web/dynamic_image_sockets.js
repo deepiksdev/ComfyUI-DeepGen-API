@@ -141,10 +141,18 @@ app.registerExtension({
                     const modelWidget = node.widgets?.find(w => w.name === "model");
                     if (!modelWidget || !configs.length) return;
 
-                    const selectedModelName = modelWidget.value;
+                    let selectedModelName = modelWidget.value;
+                    if (Array.isArray(selectedModelName) || !selectedModelName) {
+                        if (modelWidget.options && modelWidget.options.values && modelWidget.options.values.length > 0) {
+                            selectedModelName = modelWidget.options.values[0];
+                            modelWidget.value = selectedModelName; // Force initialize
+                        }
+                    }
+
                     const modelConfig = configs.find(c => c.name === selectedModelName);
                     const targetImages = modelConfig ? (modelConfig.nb_of_images || 0) : 1;
                     const targetVideos = modelConfig ? (modelConfig.nb_of_videos || 0) : 0;
+                    const targetElements = modelConfig ? (modelConfig.nb_of_elements || 0) : 0;
                     const targetFrames = modelConfig ? (modelConfig.nb_of_frames || 0) : 0;
                     const supportedInputs = modelConfig ? (modelConfig.optional_inputs || []) : [];
 
@@ -253,7 +261,10 @@ app.registerExtension({
 
                     // Force a UI redraw
                     if (node.computeSize) {
-                        node.setSize(node.computeSize());
+                        const sz = node.computeSize();
+                        // ensure min height for DOM elements properly layouting
+                        if (sz[1] < 60) sz[1] = 60;
+                        node.setSize(sz);
                     }
                     if (app.graph) {
                         app.graph.setDirtyCanvas(true, true);
