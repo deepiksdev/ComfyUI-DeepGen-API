@@ -16,7 +16,7 @@ class VideoNode:
     def INPUT_TYPES(cls):
         # Load models from CSV
         cls.models_list = []
-        cls.models_map = {} # Map from name to value (alias_id)
+        cls.supported_inputs_map = {}
         
         csv_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "models.csv")
         try:
@@ -24,13 +24,15 @@ class VideoNode:
             with open(csv_path, mode='r', encoding='utf-8') as f:
                 reader = csv.reader(f)
                 for row in reader:
-                    if len(row) >= 10 and row[9].strip() == "T2V":
+                    if len(row) >= 11 and row[10].strip() == "T2V":
                         cls.models_list.append(row[1])
                         cls.models_map[row[1]] = row[0]
+                        cls.supported_inputs_map[row[0]] = [x.strip() for x in row[2].split(",")] if row[2].strip() else []
         except Exception as e:
             print(f"DeepGen: Failed to load models.csv for video_node: {e}")
             cls.models_list = ["Kling 2.5 Turbo Pro"]
             cls.models_map = {"Kling 2.5 Turbo Pro": "kling2.5-turbo-pro"}
+            cls.supported_inputs_map = {"kling2.5-turbo-pro": []}
 
         return {
             "required": {
@@ -39,12 +41,26 @@ class VideoNode:
             },
             "optional": {
                 "seed_value": ("INT", {"default": -1}),
-                "duration": (["5", "10"], {"default": "5"}),
-                "aspect_ratio": (["16:9", "9:16", "1:1", "4:3", "3:4", "21:9", "9:21"], {"default": "16:9"}),
-                "loop": ("BOOLEAN", {"default": False}),
                 "variations": ("INT", {"default": 1, "min": 1, "max": 10, "step": 1}),
                 "endpoint": ("STRING", {"default": "https://api.deepgen.app"}),
                 "output_prefix": ("STRING", {"default": ""}),
+                
+                # Dynamic combo fields
+                "duration": (["5", "10"], {"default": "5"}),
+                "aspect_ratio": (["16:9", "9:16", "1:1", "4:3", "3:4", "21:9", "9:21"], {"default": "16:9"}),
+                "resolution": ([""], {"default": ""}),
+                
+                # Additional T2V fields
+                "temperature": ("FLOAT", {"default": 0.7, "min": 0.0, "max": 2.0, "step": 0.1}),
+                "cfg_scale": ("FLOAT", {"default": 7.0, "min": 0.0, "max": 30.0, "step": 0.5}),
+                "negative_prompt": ("STRING", {"default": "", "multiline": True}),
+                "queue": ("BOOLEAN", {"default": False}),
+                "loop": ("BOOLEAN", {"default": False}),
+                "generate_audio": ("BOOLEAN", {"default": False}),
+                "shot_type": ("STRING", {"default": ""}),
+                "auto_fix": ("BOOLEAN", {"default": False}),
+                "enable_safety_checker": ("BOOLEAN", {"default": True}),
+                "safety_tolerance": ("STRING", {"default": "Auto"}),
             },
         }
 
@@ -63,31 +79,78 @@ class VideoNode:
         model,
         prompt,
         seed_value=-1,
-        duration="5",
-        aspect_ratio="16:9",
-        loop=False,
         variations=1,
         endpoint="https://api.deepgen.app",
         output_prefix="",
+        duration="5",
+        aspect_ratio="16:9",
+        resolution="",
+        temperature=0.7,
+        cfg_scale=7.0,
+        negative_prompt="",
+        queue=False,
+        loop=False,
+        generate_audio=False,
+        shot_type="",
+        auto_fix=False,
+        enable_safety_checker=True,
+        safety_tolerance="Auto",
         **kwargs
     ):
         try:
-            alias_id = self.models_map.get(model, "kling2.5-turbo-pro")
+            alias_id = getattr(self, "models_map", {}).get(model, "kling2.5-turbo-pro")
+            supported_inputs = getattr(self, "supported_inputs_map", {}).get(alias_id, [])
+            
             arguments = {
                 "prompt": prompt,
-                "duration": duration,
-                "aspect_ratio": aspect_ratio,
-                "loop": loop,
-                "queue": True,
             }
+            
+            # Submitting optional inputs conditionally based on what's supported
+            if "duration" in supported_inputs and duration:
+                arguments["duration"] = duration
+            if "aspect_ratio" in supported_inputs and aspect_ratio not in ("", "Auto"):
+                arguments["aspect_ratio"] = aspect_ratio
+            if "resolution" in supported_inputs and resolution not in ("", "Auto"):
+                arguments["resolution"] = resolution
+                
+            if "negative_prompt" in supported_inputs and negative_prompt:
+                arguments["negative_prompt"] = negative_prompt
+            if "temperature" in supported_inputs:
+                arguments["temperature"] = temperature
+            if "cfg_scale" in supported_inputs:
+                arguments["cfg_scale"] = cfg_scale
+            if "queue" in supported_inputs:
+                arguments["queue"] = queue
+            if "loop" in supported_inputs:
+                arguments["loop"] = loop
+            if "generate_audio" in supported_inputs:
+                arguments["generate_audio"] = generate_audio
+            if "shot_type" in supported_inputs and shot_type:
+                arguments["shot_type"] = shot_type
+            if "auto_fix" in supported_inputs:
+                arguments["auto_fix"] = auto_fix
+            if "enable_safety_checker" in supported_inputs:
+                arguments["enable_safety_checker"] = enable_safety_checker
+            if "safety_tolerance" in supported_inputs and safety_tolerance not in ("", "Auto"):
+                arguments["safety_tolerance"] = safety_tolerance
+
             if seed_value != -1:
                 arguments["seed"] = seed_value
 
             attachments_files = []
+            
+            # Exclude standard optional fields from kwargs
+            standard_kwargs = [
+                "prompt", "seed_value", "variations", "endpoint", "output_prefix", "duration", 
+                "aspect_ratio", "resolution", "temperature", "cfg_scale", "negative_prompt", 
+                "queue", "loop", "generate_audio", "shot_type", "auto_fix", 
+                "enable_safety_checker", "safety_tolerance"
+            ]
+            
             for k, v in kwargs.items():
                 if v is None:
                     continue
-                if k in ["model", "prompt", "seed_value", "duration", "aspect_ratio", "loop", "variations", "endpoint", "output_prefix"]:
+                if k in ["model"] + standard_kwargs:
                     continue
 
                 # The new separate image sockets for elements (element_i_frontal, etc.) 

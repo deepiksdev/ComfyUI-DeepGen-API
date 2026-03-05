@@ -39,7 +39,11 @@ function manageDynamicChoiceWidget(node, widgetName, optionsList) {
             // Restore visibility if it was hidden visually
             if (widget.type === "hidden") {
                 widget.type = widget.origType || "COMBO";
-                widget.computeSize = widget.origComputeSize || (() => [200, 20]);
+                if (widget.origComputeSize) {
+                    widget.computeSize = widget.origComputeSize;
+                } else {
+                    delete widget.computeSize;
+                }
             }
             widget.options.values = optionsList;
             if (!optionsList.includes(widget.value)) {
@@ -54,6 +58,49 @@ function manageDynamicChoiceWidget(node, widgetName, optionsList) {
             widget.type = "hidden";
             // A height of -4 combined with hidden type makes LiteGraph effectively ignore its layout space
             widget.computeSize = () => [0, -4];
+        }
+    }
+}
+
+function manageOptionalWidgetVisually(node, widgetName, isSupported) {
+    if (!node.widgets) return;
+    let widget = node.widgets.find(w => w.name === widgetName);
+    if (!widget) return;
+
+    // Ignore converted widgets as they are sockets now
+    if (widget.type === "converted-widget") return;
+
+    if (isSupported) {
+        if (widget.type === "hidden") {
+            widget.type = widget.origType || "customtype";
+            if (widget.origComputeSize) {
+                widget.computeSize = widget.origComputeSize;
+            } else {
+                delete widget.computeSize;
+            }
+        }
+        if (widget.inputEl) {
+            widget.inputEl.style.display = "";
+            if (widget.inputEl.parentNode) {
+                widget.inputEl.parentNode.style.display = "";
+            }
+        } else if (widget.element) {
+            widget.element.style.display = "";
+        }
+    } else {
+        if (widget.type !== "hidden") {
+            widget.origType = widget.type;
+            widget.origComputeSize = widget.computeSize;
+            widget.type = "hidden";
+            widget.computeSize = () => [0, -4];
+        }
+        if (widget.inputEl) {
+            widget.inputEl.style.display = "none";
+            if (widget.inputEl.parentNode && widget.inputEl.parentNode.classList && widget.inputEl.parentNode.classList.contains("comfy-multiline-input")) {
+                widget.inputEl.parentNode.style.display = "none";
+            }
+        } else if (widget.element) {
+            widget.element.style.display = "none";
         }
     }
 }
@@ -97,13 +144,30 @@ app.registerExtension({
                     const modelConfig = configs.find(c => c.name === selectedModelName);
                     const targetImages = modelConfig ? (modelConfig.nb_of_images || 0) : 1;
                     const targetVideos = modelConfig ? (modelConfig.nb_of_videos || 0) : 0;
-                    const targetElements = modelConfig ? (modelConfig.nb_of_elements || 0) : 0;
                     const targetFrames = modelConfig ? (modelConfig.nb_of_frames || 0) : 0;
+                    const supportedInputs = modelConfig ? (modelConfig.optional_inputs || []) : [];
 
                     // Handle dynamic choice widgets (aspect_ratio, resolution, pixel_size)
-                    manageDynamicChoiceWidget(node, "aspect_ratio", modelConfig ? modelConfig.aspect_ratios : []);
-                    manageDynamicChoiceWidget(node, "resolution", modelConfig ? modelConfig.resolutions : []);
-                    manageDynamicChoiceWidget(node, "pixel_size", modelConfig ? modelConfig.pixel_sizes : []);
+                    // If they are explicitly in the dynamic lists, we update options, but also only show if supported
+                    const hasAspectRatios = modelConfig && modelConfig.aspect_ratios && modelConfig.aspect_ratios.length > 0;
+                    const hasResolutions = modelConfig && modelConfig.resolutions && modelConfig.resolutions.length > 0;
+                    const hasPixelSizes = modelConfig && modelConfig.pixel_sizes && modelConfig.pixel_sizes.length > 0;
+
+                    manageDynamicChoiceWidget(node, "aspect_ratio", supportedInputs.includes("aspect_ratio") ? modelConfig.aspect_ratios : []);
+                    manageDynamicChoiceWidget(node, "resolution", supportedInputs.includes("resolution") ? modelConfig.resolutions : []);
+                    manageDynamicChoiceWidget(node, "pixel_size", supportedInputs.includes("pixel_size") ? modelConfig.pixel_sizes : []);
+
+                    // General optional inputs handling
+                    const allOptionalInputs = [
+                        "temperature", "cfg_scale", "steps", "loras", "negative_prompt",
+                        "style", "queue", "duration", "generate_audio", "shot_type",
+                        "auto_fix", "enable_safety_checker", "safety_tolerance",
+                        "transparent_background", "partial_images", "quality", "loop"
+                    ];
+
+                    for (const optInput of allOptionalInputs) {
+                        manageOptionalWidgetVisually(node, optInput, supportedInputs.includes(optInput));
+                    }
 
                     if (!node.inputs) return;
 
