@@ -133,7 +133,8 @@ app.registerExtension({
             nodeType.prototype.onNodeCreated = function () {
                 const r = onNodeCreated ? onNodeCreated.apply(this, arguments) : undefined;
 
-                const updateSockets = async (node) => {
+                this._deepgen_update_sockets = async () => {
+                    const node = this;
                     const configs = await fetchModelsConfig();
 
                     // Find the model widget
@@ -269,15 +270,29 @@ app.registerExtension({
                             if (callback) {
                                 callback.call(modelWidget, value);
                             }
-                            updateSockets(this);
+                            this._deepgen_update_sockets();
                         };
 
-                        // Initial update based on default value
-                        updateSockets(this);
+                        // Initial updates based on default value
+                        this._deepgen_update_sockets();
+
+                        // Fallback delays for asynchronously rendered ComfyUI DOM widgets (e.g. textareas)
+                        setTimeout(() => this._deepgen_update_sockets(), 500);
+                        setTimeout(() => this._deepgen_update_sockets(), 1000);
                     }
                 }, 100);
 
                 return r;
+            };
+
+            const onAdded = nodeType.prototype.onAdded;
+            nodeType.prototype.onAdded = function () {
+                if (onAdded) {
+                    onAdded.apply(this, arguments);
+                }
+                if (this._deepgen_update_sockets) {
+                    setTimeout(() => this._deepgen_update_sockets(), 50);
+                }
             };
         }
     }
