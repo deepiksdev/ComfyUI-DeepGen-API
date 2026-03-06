@@ -7,36 +7,10 @@ deepgen_config = DeepGenConfig()
 
 
 class LLMNode:
+    # Base INPUT_TYPES left blank as this will be a dynamically generated subclass.
     @classmethod
     def INPUT_TYPES(cls):
-        # Load models from CSV
-        cls.models_list = []
-        cls.models_map = {} # Map from name to value (alias_id)
-        
-        csv_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "models.csv")
-        try:
-            with open(csv_path, mode='r', encoding='utf-8') as f:
-                reader = csv.reader(f)
-                for row in reader:
-                    if len(row) >= 10 and row[9].strip() == "LLM":
-                        cls.models_list.append(row[1])
-                        cls.models_map[row[1]] = row[0]
-        except Exception as e:
-            print(f"DeepGen: Failed to load models.csv for llm_node: {e}")
-            cls.models_list = ["Gemini 3 Flash"]
-            cls.models_map = {"Gemini 3 Flash": "gemini-3-flash"}
-
-        return {
-            "required": {
-                "model": (cls.models_list, {"default": cls.models_list[0] if cls.models_list else ""}),
-                "prompt": ("STRING", {"default": "", "multiline": True}),
-            },
-            "optional": {
-                "seed_value": ("INT", {"default": -1}),
-                "endpoint": ("STRING", {"default": "https://api.deepgen.app"}),
-                "output_prefix": ("STRING", {"default": ""}),
-            },
-        }
+        return {"required": {}, "optional": {}}
 
     @classmethod
     def VALIDATE_INPUTS(cls, **kwargs):
@@ -48,38 +22,118 @@ class LLMNode:
     FUNCTION = "generate_text"
     CATEGORY = "DeepGen/LLM"
 
-    def generate_text(self, model, prompt, seed_value=-1, endpoint="https://api.deepgen.app", output_prefix="", **kwargs):
+    def generate_text(self, **kwargs):
         try:
-            alias_id = self.models_map.get(model, "gemini-3-flash")
+            alias_id = getattr(self, "alias_id", "gemini-3-flash")
+            
+            def unwrap(v):
+                return v[0] if isinstance(v, list) and len(v) > 0 else v
+
+            prompt = unwrap(kwargs.get("prompt", ""))
+            seed_value = unwrap(kwargs.get("seed_value", -1))
+            endpoint = unwrap(kwargs.get("endpoint", "https://api.deepgen.app"))
+            output_prefix = unwrap(kwargs.get("output_prefix", ""))
+            unique_id = unwrap(kwargs.get("unique_id"))
+            extra_pnginfo = unwrap(kwargs.get("extra_pnginfo"))
             
             image_urls = []
             attachments_files = []
+            original_names_map = {}
+            
             for k, v in kwargs.items():
                 if v is None:
                     continue
-                if k in ["model", "prompt", "seed_value", "endpoint", "output_prefix"]:
+                if k in ["prompt", "seed_value", "endpoint", "output_prefix", "unique_id", "extra_pnginfo"]:
                     continue
 
-                if k.startswith("element_") and isinstance(v, dict):
-                    for elem_key, elem_val in v.items():
-                        if elem_val is None:
+                limit = 1
+                prefix_base = k
+                if k in ("image", "images"):
+                    limit = 9999
+                    prefix_base = "image"
+                elif k in ("video", "videos"):
+                    limit = 9999
+                    prefix_base = "video"
+                elif k in ("frame", "frames"):
+                    limit = 9999
+                    prefix_base = "frame"
+                elif k in ("element", "elements"):
+                    limit = 9999
+                    prefix_base = "element"
+                elif k in ("mask", "masks"):
+                    limit = 10
+                    prefix_base = "mask"
+
+                if k not in original_names_map and unique_id and extra_pnginfo:
+                    original_names_map[k] = ImageUtils.resolve_filenames(unique_id, extra_pnginfo, k)
+                original_names = original_names_map.get(k, [])
+                
+                def get_orig_name(idx):
+                    if idx < len(original_names) and original_names[idx]:
+                        org = str(original_names[idx])
+                        if org.lower().endswith(('.png', '.jpg', '.jpeg', '.webp', '.mp4')):
+                            org = org.rsplit('.', 1)[0]
+                        return f"_{org}"
+                    return ""
+
+                v_list = v if isinstance(v, list) else [v]
+                flattened_items = []
+                for item in v_list:
+                    if hasattr(item, "shape") and len(item.shape) == 4:
+                        for i in range(item.shape[0]):
+                            flattened_items.append(item[i:i+1])
+                    elif isinstance(item, list):
+                        flattened_items.extend(item)
+                    else:
+                        flattened_items.append(item)
+
+                if prefix_base == "element":
+                    for i, elem_dict in enumerate(flattened_items[:limit], start=1):
+                        if not isinstance(elem_dict, dict):
                             continue
                         
+                        for elem_key, elem_val in elem_dict.items():
+                            if elem_val is None:
+                                continue
+                                
+                            if elem_key == "frontal_image":
+                                if hasattr(elem_val, "shape"):
+                                    img = elem_val
+                                    if len(img.shape) == 4:
+                                        attach = ImageUtils.get_attachment_file(img[0:1], filename=f"{prefix_base}_{i}_frontal.png")
+                                    else:
+                                        attach = ImageUtils.get_attachment_file(img, filename=f"{prefix_base}_{i}_frontal.png")
+                                    if attach:
+                                        attachments_files.append(attach)
+                            elif elem_key == "references":
+                                if hasattr(elem_val, "shape"):
+                                    img = elem_val
+                                    if len(img.shape) == 4:
+                                        for r in range(min(img.shape[0], 3)):
+                                            attach = ImageUtils.get_attachment_file(img[r:r+1], filename=f"{prefix_base}_{i}_ref_{r+1}.png")
+                                            if attach:
+                                                attachments_files.append(attach)
+                                    else:
+                                        attach = ImageUtils.get_attachment_file(img, filename=f"{prefix_base}_{i}_ref_1.png")
+                                        if attach:
+                                            attachments_files.append(attach)
+                    continue
+
+                for i, item in enumerate(flattened_items[:limit]):
+                    if hasattr(item, "shape"):
+                        attach = ImageUtils.get_attachment_file(item, filename=f"{prefix_base}_{i+1}{get_orig_name(i)}.png")
+                        if attach:
+                            attachments_files.append(attach)
+                    else:
                         vid_path = None
-                        if isinstance(elem_val, str):
+                        if isinstance(item, str):
                             try:
-                                if os.path.exists(elem_val):
-                                    vid_path = elem_val
-                            except Exception:
-                                pass
-                        elif hasattr(elem_val, "filepath") and elem_val.filepath:
+                                if os.path.exists(item): vid_path = item
+                            except: pass
+                        elif hasattr(item, "filepath") and item.filepath:
                             try:
-                                if os.path.exists(elem_val.filepath):
-                                    vid_path = elem_val.filepath
-                            except Exception:
-                                pass
-                        
-                        prefix = f"{k}_{elem_key}"
+                                if os.path.exists(item.filepath): vid_path = item.filepath
+                            except: pass
                         
                         if vid_path:
                             import base64
@@ -88,7 +142,14 @@ class LLMNode:
                             mime_type, _ = mimetypes.guess_type(vid_path)
                             mime_type = mime_type or "application/octet-stream"
                             original_name = os_mod.basename(vid_path)
-                            new_filename = f"{prefix}___{original_name}"
+                            orig_n = get_orig_name(i)
+                            
+                            if orig_n:
+                                ext = os_mod.path.splitext(original_name)[1]
+                                new_filename = f"{prefix_base}_{i+1}{orig_n}{ext}"
+                            else:
+                                new_filename = f"{prefix_base}_{i+1}__{original_name}"
+                                
                             with open(vid_path, "rb") as vf:
                                 b64 = base64.b64encode(vf.read()).decode("utf-8")
                                 attachments_files.append({
@@ -96,65 +157,6 @@ class LLMNode:
                                     "attachment_mime_type": mime_type,
                                     "attachment_file_name": new_filename
                                 })
-                            continue
-                        
-                        if hasattr(elem_val, "shape"):
-                            img = elem_val
-                            if len(img.shape) == 4:
-                                for i in range(img.shape[0]):
-                                    single_image = img[i:i+1]
-                                    attach = ImageUtils.get_attachment_file(single_image, filename=f"{prefix}___{i}.png")
-                                    if attach:
-                                        attachments_files.append(attach)
-                            else:
-                                attach = ImageUtils.get_attachment_file(img, filename=f"{prefix}___image.png")
-                                if attach:
-                                    attachments_files.append(attach)
-                    continue
-
-                vid_path = None
-                if isinstance(v, str):
-                    try:
-                        if os.path.exists(v):
-                            vid_path = v
-                    except Exception:
-                        pass
-                elif hasattr(v, "filepath") and v.filepath:
-                    try:
-                        if os.path.exists(v.filepath):
-                            vid_path = v.filepath
-                    except Exception:
-                        pass
-                
-                if vid_path:
-                    import base64
-                    import mimetypes
-                    import os as os_mod
-                    mime_type, _ = mimetypes.guess_type(vid_path)
-                    mime_type = mime_type or "application/octet-stream"
-                    original_name = os_mod.basename(vid_path)
-                    new_filename = f"{k}__{original_name}"
-                    with open(vid_path, "rb") as vf:
-                        b64 = base64.b64encode(vf.read()).decode("utf-8")
-                        attachments_files.append({
-                            "attachment_bytes": b64,
-                            "attachment_mime_type": mime_type,
-                            "attachment_file_name": new_filename
-                        })
-                    continue
-                
-                if hasattr(v, "shape"):
-                    img = v
-                    if len(img.shape) == 4:
-                        for i in range(img.shape[0]):
-                            single_image = img[i:i+1]
-                            attach = ImageUtils.get_attachment_file(single_image, filename=f"{k}__{i}.png")
-                            if attach:
-                                attachments_files.append(attach)
-                    else:
-                        attach = ImageUtils.get_attachment_file(img, filename=f"{k}__image.png")
-                        if attach:
-                            attachments_files.append(attach)
             
             arguments = {
                 "prompt": prompt,
@@ -193,12 +195,4 @@ class LLMNode:
             return (error_result[0], "", 0.0)
 
 
-# Node class mappings
-NODE_CLASS_MAPPINGS = {
-    "LLM_deepgen": LLMNode,
-}
 
-# Node display name mappings
-NODE_DISPLAY_NAME_MAPPINGS = {
-    "LLM_deepgen": "LLM (deepgen)",
-}

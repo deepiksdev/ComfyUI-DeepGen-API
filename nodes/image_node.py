@@ -9,45 +9,10 @@ from PIL import Image, ImageOps
 # deepgen_config = DeepGenConfig()
 
 class ImageNode:
+    # Base INPUT_TYPES left blank as this will be a dynamically generated subclass.
     @classmethod
     def INPUT_TYPES(cls):
-        # Load models from CSV
-        cls.models_list = []
-        cls.models_map = {} # Map from name to value (alias_id)
-        
-        csv_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "models.csv")
-        try:
-            with open(csv_path, mode='r', encoding='utf-8') as f:
-                reader = csv.reader(f)
-                for row in reader:
-                    if len(row) >= 10 and row[9].strip() == "T2I":
-                        cls.models_list.append(row[1])
-                        cls.models_map[row[1]] = row[0]
-        except Exception as e:
-            print(f"DeepGen: Failed to load models.csv: {e}")
-            cls.models_list = ["Flux Schnell"]
-            cls.models_map = {"Flux Schnell": "flux_schnell"}
-
-        optional_inputs = {
-            "seed_value": ("INT", {"default": -1}),
-            "num_images": ("INT", {"default": 1, "min": 1, "max": 10}),
-            "output_format": (["png", "jpeg", "webp"], {"default": "png"}),
-            "endpoint": ("STRING", {"default": "https://api.deepgen.app"}),
-            "output_prefix": ("STRING", {"default": ""}),
-            "aspect_ratio": (["Auto"], {"default": "Auto"}),
-            "resolution": ([""], {"default": ""}),
-            "pixel_size": ([""], {"default": ""}),
-        }
-
-
-        return {
-            "required": {
-                "model": (cls.models_list, {"default": cls.models_list[0] if cls.models_list else ""}),
-                "prompt": ("STRING", {"default": "", "multiline": True}),
-                "negative_prompt": ("STRING", {"default": "", "multiline": True}),
-            },
-            "optional": optional_inputs,
-        }
+        return {"required": {}, "optional": {}}
 
     RETURN_TYPES = ("IMAGE", "STRING", "FLOAT",)
     RETURN_NAMES = ("IMAGE", "output_prefix_and_model", "total_credits_used",)
@@ -59,69 +24,186 @@ class ImageNode:
         """Bypass standard ComfyUI validation for dynamic combo boxes"""
         return True
 
-    def generate_image(
-        self,
-        model,
-        prompt,
-        negative_prompt="",
-        seed_value=-1,
-        num_images=1,
-        output_format="png",
-        endpoint="https://api.deepgen.app",
-        output_prefix="",
-        aspect_ratio=None,
-        resolution=None,
-        pixel_size=None,
-        **kwargs
-    ):
+    def generate_image(self, **kwargs):
+        # Use properties from the subclass directly
+        alias_id = getattr(self, "alias_id", "flux_schnell")
+        supported_inputs = getattr(self, "supported_inputs", [])
+
+        def unwrap(v):
+            return v[0] if isinstance(v, list) and len(v) > 0 else v
+
+        prompt = unwrap(kwargs.get("prompt", ""))
+        negative_prompt = unwrap(kwargs.get("negative_prompt", ""))
+        seed_value = unwrap(kwargs.get("seed_value", -1))
+        num_images = unwrap(kwargs.get("num_images", 1))
+        output_format = unwrap(kwargs.get("output_format", "png"))
+        endpoint = unwrap(kwargs.get("endpoint", "https://api.deepgen.app"))
+        output_prefix = unwrap(kwargs.get("output_prefix", ""))
+        resolution = unwrap(kwargs.get("resolution", ""))
+        aspect_ratio = unwrap(kwargs.get("aspect_ratio", "Auto"))
+        pixel_size = unwrap(kwargs.get("pixel_size", ""))
+        temperature = unwrap(kwargs.get("temperature", 0.7))
+        cfg_scale = unwrap(kwargs.get("cfg_scale", 7.0))
+        steps = unwrap(kwargs.get("steps", 20))
+        loras = unwrap(kwargs.get("loras", ""))
+        style = unwrap(kwargs.get("style", ""))
+        queue = unwrap(kwargs.get("queue", False))
+        auto_fix = unwrap(kwargs.get("auto_fix", False))
+        enable_safety_checker = unwrap(kwargs.get("enable_safety_checker", True))
+        transparent_background = unwrap(kwargs.get("transparent_background", False))
+        partial_images = unwrap(kwargs.get("partial_images", 1))
+        quality = unwrap(kwargs.get("quality", "standard"))
+
         arguments = {
             "prompt": prompt,
             "num_images": num_images,
-            "negative_prompt": negative_prompt,
             "output_format": output_format,
         }
 
-        if aspect_ratio is not None and aspect_ratio not in ("", "Auto"):
+        # Submitting optional inputs conditionally based on what's supported
+        if "negative_prompt" in supported_inputs and negative_prompt:
+            arguments["negative_prompt"] = negative_prompt
+            
+        if "aspect_ratio" in supported_inputs and aspect_ratio not in ("", "Auto"):
             arguments["aspect_ratio"] = aspect_ratio
-        if resolution is not None and resolution not in ("", "Auto"):
+        if "resolution" in supported_inputs and resolution not in ("", "Auto"):
             arguments["resolution"] = resolution
-        if pixel_size is not None and pixel_size not in ("", "Auto"):
+        if "pixel_size" in supported_inputs and pixel_size not in ("", "Auto"):
             arguments["pixel_size"] = pixel_size
-
-        # Lookup alias_id from the selected model name
-        alias_id = self.models_map.get(model, "flux_schnell")
-
+            
+        if "temperature" in supported_inputs:
+            arguments["temperature"] = temperature
+        if "cfg_scale" in supported_inputs:
+            arguments["cfg_scale"] = cfg_scale
+        if "steps" in supported_inputs:
+            arguments["steps"] = steps
+        if "loras" in supported_inputs and loras:
+            arguments["loras"] = loras.split(",") # Assume comma separated values for loras
+        if "style" in supported_inputs and style:
+            arguments["style"] = style
+        if "queue" in supported_inputs:
+            arguments["queue"] = queue
+        if "auto_fix" in supported_inputs:
+            arguments["auto_fix"] = auto_fix
+        if "enable_safety_checker" in supported_inputs:
+            arguments["enable_safety_checker"] = enable_safety_checker
+        if "transparent_background" in supported_inputs:
+            arguments["transparent_background"] = transparent_background
+        if "partial_images" in supported_inputs:
+            arguments["partial_images"] = partial_images
+        if "quality" in supported_inputs and quality:
+            arguments["quality"] = quality
 
         if seed_value != -1:
             arguments["seed"] = seed_value
 
         attachments_files = []
+        # Exclude standard optional fields from iterating over kwargs
+        standard_kwargs = [
+            "prompt", "negative_prompt", "seed_value", "num_images", "output_format", "endpoint", 
+            "output_prefix", "aspect_ratio", "resolution", "pixel_size", "temperature", "cfg_scale", 
+            "steps", "loras", "style", "queue", "auto_fix", "enable_safety_checker", 
+            "transparent_background", "partial_images", "quality", "extra_pnginfo", "unique_id"
+        ]
+        
+        unique_id = unwrap(kwargs.get("unique_id"))
+        extra_pnginfo = unwrap(kwargs.get("extra_pnginfo"))
+        original_names_map = {}
+
         for k, v in kwargs.items():
             if v is None:
                 continue
-            if k in ["prompt", "negative_prompt", "seed_value", "num_images", "output_format", "endpoint", "output_prefix", "aspect_ratio", "resolution", "pixel_size"]:
+            if k in standard_kwargs or k in ["unique_id", "extra_pnginfo"]:
                 continue
 
-            if k.startswith("element_") and isinstance(v, dict):
-                for elem_key, elem_val in v.items():
-                    if elem_val is None:
+            limit = 1
+            prefix_base = k
+            if k in ("image", "images"):
+                limit = 9999
+                prefix_base = "image"
+            elif k in ("video", "videos"):
+                limit = 9999
+                prefix_base = "video"
+            elif k in ("frame", "frames"):
+                limit = 9999
+                prefix_base = "frame"
+            elif k in ("element", "elements"):
+                limit = 9999
+                prefix_base = "element"
+            elif k in ("mask", "masks"):
+                limit = 10
+                prefix_base = "mask"
+
+            if k not in original_names_map and unique_id and extra_pnginfo:
+                original_names_map[k] = ImageUtils.resolve_filenames(unique_id, extra_pnginfo, k)
+            original_names = original_names_map.get(k, [])
+            
+            def get_orig_name(idx):
+                if idx < len(original_names) and original_names[idx]:
+                    org = str(original_names[idx])
+                    if org.lower().endswith(('.png', '.jpg', '.jpeg', '.webp', '.mp4')):
+                        org = org.rsplit('.', 1)[0]
+                    return f"_{org}"
+                return ""
+
+            v_list = v if isinstance(v, list) else [v]
+            flattened_items = []
+            for item in v_list:
+                if hasattr(item, "shape") and len(item.shape) == 4:
+                    for i in range(item.shape[0]):
+                        flattened_items.append(item[i:i+1])
+                elif isinstance(item, list):
+                    flattened_items.extend(item)
+                else:
+                    flattened_items.append(item)
+
+            if prefix_base == "element":
+                for i, elem_dict in enumerate(flattened_items[:limit], start=1):
+                    if not isinstance(elem_dict, dict):
                         continue
                     
+                    for elem_key, elem_val in elem_dict.items():
+                        if elem_val is None:
+                            continue
+                            
+                        if elem_key == "frontal_image":
+                            if hasattr(elem_val, "shape"):
+                                img = elem_val
+                                if len(img.shape) == 4:
+                                    attach = ImageUtils.get_attachment_file(img[0:1], filename=f"{prefix_base}_{i}_frontal.png")
+                                else:
+                                    attach = ImageUtils.get_attachment_file(img, filename=f"{prefix_base}_{i}_frontal.png")
+                                if attach:
+                                    attachments_files.append(attach)
+                        elif elem_key == "references":
+                            if hasattr(elem_val, "shape"):
+                                img = elem_val
+                                if len(img.shape) == 4:
+                                    for r in range(min(img.shape[0], 3)):
+                                        attach = ImageUtils.get_attachment_file(img[r:r+1], filename=f"{prefix_base}_{i}_ref_{r+1}.png")
+                                        if attach:
+                                            attachments_files.append(attach)
+                                else:
+                                    attach = ImageUtils.get_attachment_file(img, filename=f"{prefix_base}_{i}_ref_1.png")
+                                    if attach:
+                                        attachments_files.append(attach)
+                continue
+
+            for i, item in enumerate(flattened_items[:limit]):
+                if hasattr(item, "shape"):
+                    attach = ImageUtils.get_attachment_file(item, filename=f"{prefix_base}_{i+1}{get_orig_name(i)}.png")
+                    if attach:
+                        attachments_files.append(attach)
+                else:
                     vid_path = None
-                    if isinstance(elem_val, str):
+                    if isinstance(item, str):
                         try:
-                            if os.path.exists(elem_val):
-                                vid_path = elem_val
-                        except Exception:
-                            pass
-                    elif hasattr(elem_val, "filepath") and elem_val.filepath:
+                            if os.path.exists(item): vid_path = item
+                        except: pass
+                    elif hasattr(item, "filepath") and item.filepath:
                         try:
-                            if os.path.exists(elem_val.filepath):
-                                vid_path = elem_val.filepath
-                        except Exception:
-                            pass
-                    
-                    prefix = f"{k}_{elem_key}"
+                            if os.path.exists(item.filepath): vid_path = item.filepath
+                        except: pass
                     
                     if vid_path:
                         import base64
@@ -130,7 +212,14 @@ class ImageNode:
                         mime_type, _ = mimetypes.guess_type(vid_path)
                         mime_type = mime_type or "application/octet-stream"
                         original_name = os_mod.basename(vid_path)
-                        new_filename = f"{prefix}___{original_name}"
+                        orig_n = get_orig_name(i)
+                        
+                        if orig_n:
+                            ext = os_mod.path.splitext(original_name)[1]
+                            new_filename = f"{prefix_base}_{i+1}{orig_n}{ext}"
+                        else:
+                            new_filename = f"{prefix_base}_{i+1}__{original_name}"
+                            
                         with open(vid_path, "rb") as vf:
                             b64 = base64.b64encode(vf.read()).decode("utf-8")
                             attachments_files.append({
@@ -138,65 +227,6 @@ class ImageNode:
                                 "attachment_mime_type": mime_type,
                                 "attachment_file_name": new_filename
                             })
-                        continue
-                    
-                    if hasattr(elem_val, "shape"):
-                        img = elem_val
-                        if len(img.shape) == 4:
-                            for i in range(img.shape[0]):
-                                single_image = img[i:i+1]
-                                attach = ImageUtils.get_attachment_file(single_image, filename=f"{prefix}___{i}.png")
-                                if attach:
-                                    attachments_files.append(attach)
-                        else:
-                            attach = ImageUtils.get_attachment_file(img, filename=f"{prefix}___image.png")
-                            if attach:
-                                attachments_files.append(attach)
-                continue
-
-            vid_path = None
-            if isinstance(v, str):
-                try:
-                    if os.path.exists(v):
-                        vid_path = v
-                except Exception:
-                    pass
-            elif hasattr(v, "filepath") and v.filepath:
-                try:
-                    if os.path.exists(v.filepath):
-                        vid_path = v.filepath
-                except Exception:
-                    pass
-            
-            if vid_path:
-                import base64
-                import mimetypes
-                import os as os_mod
-                mime_type, _ = mimetypes.guess_type(vid_path)
-                mime_type = mime_type or "application/octet-stream"
-                original_name = os_mod.basename(vid_path)
-                new_filename = f"{k}__{original_name}"
-                with open(vid_path, "rb") as vf:
-                    b64 = base64.b64encode(vf.read()).decode("utf-8")
-                    attachments_files.append({
-                        "attachment_bytes": b64,
-                        "attachment_mime_type": mime_type,
-                        "attachment_file_name": new_filename
-                    })
-                continue
-            
-            if hasattr(v, "shape"):
-                img = v
-                if len(img.shape) == 4:
-                    for i in range(img.shape[0]):
-                        single_image = img[i:i+1]
-                        attach = ImageUtils.get_attachment_file(single_image, filename=f"{k}__{i}.png")
-                        if attach:
-                            attachments_files.append(attach)
-                else:
-                    attach = ImageUtils.get_attachment_file(img, filename=f"{k}__image.png")
-                    if attach:
-                        attachments_files.append(attach)
 
         if attachments_files:
             arguments["attachments_files"] = attachments_files
@@ -239,12 +269,4 @@ class ImageNode:
         return ResultProcessor.create_blank_image()
 
 
-# Node class mappings
-NODE_CLASS_MAPPINGS = {
-    "Image_deepgen": ImageNode,
-}
 
-# Node display name mappings
-NODE_DISPLAY_NAME_MAPPINGS = {
-    "Image_deepgen": "Image (deepgen)",
-}

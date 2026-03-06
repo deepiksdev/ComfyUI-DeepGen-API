@@ -4,9 +4,8 @@ import importlib.util
 from .nodes import api_routes
 
 node_list = [
-    "image_node",
-    "video_node",
-    "llm_node",
+    "dynamic_models",
+    "element_node",
     "display_node",
     "video_to_image_node",
 ]

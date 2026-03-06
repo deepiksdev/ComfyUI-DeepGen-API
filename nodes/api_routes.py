@@ -31,36 +31,37 @@ async def get_deepgen_models(request):
         with open(csv_path, mode='r', encoding='utf-8') as f:
             reader = csv.reader(f)
             for row in reader:
-                if len(row) < 10:
+                if len(row) < 11:
                     continue
                 try:
-                    num_images = int(row[5]) if row[5].strip() else 0
+                    num_images = int(row[6]) if row[6].strip() else 0
                 except ValueError:
                     num_images = 1
                 try:
-                    num_videos = int(row[6]) if row[6].strip() else 0
+                    num_videos = int(row[7]) if row[7].strip() else 0
                 except ValueError:
                     num_videos = 0
                 try:
-                    num_elements = int(row[7]) if row[7].strip() else 0
+                    num_elements = int(row[8]) if row[8].strip() else 0
                 except ValueError:
                     num_elements = 0
                 try:
-                    num_frames = int(row[8]) if row[8].strip() else 0
+                    num_frames = int(row[9]) if row[9].strip() else 0
                 except ValueError:
                     num_frames = 0
                     
                 models_info.append({
                     "value": row[0],
                     "name": row[1],
-                    "aspect_ratios": [x.strip() for x in row[2].split(",")] if row[2].strip() else [],
-                    "resolutions": [x.strip() for x in row[3].split(",")] if row[3].strip() else [],
-                    "pixel_sizes": [x.strip() for x in row[4].split(",")] if row[4].strip() else [],
+                    "optional_inputs": [x.strip() for x in row[2].split(",")] if row[2].strip() else [],
+                    "aspect_ratios": [x.strip() for x in row[3].split(",")] if row[3].strip() else [],
+                    "resolutions": [x.strip() for x in row[4].split(",")] if row[4].strip() else [],
+                    "pixel_sizes": [x.strip() for x in row[5].split(",")] if row[5].strip() else [],
                     "nb_of_images": num_images,
                     "nb_of_videos": num_videos,
                     "nb_of_elements": num_elements,
                     "nb_of_frames": num_frames,
-                    "type": row[9].strip()
+                    "type": row[10].strip()
                 })
         return web.json_response({"models": models_info})
     except Exception as e:
