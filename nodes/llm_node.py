@@ -7,36 +7,10 @@ deepgen_config = DeepGenConfig()
 
 
 class LLMNode:
+    # Base INPUT_TYPES left blank as this will be a dynamically generated subclass.
     @classmethod
     def INPUT_TYPES(cls):
-        # Load models from CSV
-        cls.models_list = []
-        cls.models_map = {} # Map from name to value (alias_id)
-        
-        csv_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "models.csv")
-        try:
-            with open(csv_path, mode='r', encoding='utf-8') as f:
-                reader = csv.reader(f)
-                for row in reader:
-                    if len(row) >= 10 and row[9].strip() == "LLM":
-                        cls.models_list.append(row[1])
-                        cls.models_map[row[1]] = row[0]
-        except Exception as e:
-            print(f"DeepGen: Failed to load models.csv for llm_node: {e}")
-            cls.models_list = ["Gemini 3 Flash"]
-            cls.models_map = {"Gemini 3 Flash": "gemini-3-flash"}
-
-        return {
-            "required": {
-                "model": (cls.models_list, {"default": cls.models_list[0] if cls.models_list else ""}),
-                "prompt": ("STRING", {"default": "", "multiline": True}),
-            },
-            "optional": {
-                "seed_value": ("INT", {"default": -1}),
-                "endpoint": ("STRING", {"default": "https://api.deepgen.app"}),
-                "output_prefix": ("STRING", {"default": ""}),
-            },
-        }
+        return {"required": {}, "optional": {}}
 
     @classmethod
     def VALIDATE_INPUTS(cls, **kwargs):
@@ -48,9 +22,9 @@ class LLMNode:
     FUNCTION = "generate_text"
     CATEGORY = "DeepGen/LLM"
 
-    def generate_text(self, model, prompt, seed_value=-1, endpoint="https://api.deepgen.app", output_prefix="", **kwargs):
+    def generate_text(self, prompt, seed_value=-1, endpoint="https://api.deepgen.app", output_prefix="", **kwargs):
         try:
-            alias_id = self.models_map.get(model, "gemini-3-flash")
+            alias_id = getattr(self, "alias_id", "gemini-3-flash")
             
             image_urls = []
             attachments_files = []
@@ -193,12 +167,4 @@ class LLMNode:
             return (error_result[0], "", 0.0)
 
 
-# Node class mappings
-NODE_CLASS_MAPPINGS = {
-    "LLM_deepgen": LLMNode,
-}
 
-# Node display name mappings
-NODE_DISPLAY_NAME_MAPPINGS = {
-    "LLM_deepgen": "LLM (deepgen)",
-}

@@ -9,61 +9,10 @@ from PIL import Image, ImageOps
 # deepgen_config = DeepGenConfig()
 
 class ImageNode:
+    # Base INPUT_TYPES left blank as this will be a dynamically generated subclass.
     @classmethod
     def INPUT_TYPES(cls):
-        # Load models from CSV
-        cls.models_list = []
-        cls.supported_inputs_map = {}
-
-        csv_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "models.csv")
-        try:
-            with open(csv_path, mode='r', encoding='utf-8') as f:
-                reader = csv.reader(f)
-                for row in reader:
-                    if len(row) >= 11 and row[10].strip() == "T2I":
-                        cls.models_list.append(row[1])
-                        cls.models_map[row[1]] = row[0]
-                        cls.supported_inputs_map[row[0]] = [x.strip() for x in row[2].split(",")] if row[2].strip() else []
-        except Exception as e:
-            print(f"DeepGen: Failed to load models.csv: {e}")
-            cls.models_list = ["Flux Schnell"]
-            cls.models_map = {"Flux Schnell": "flux_schnell"}
-            cls.supported_inputs_map = {"flux_schnell": []}
-
-        optional_inputs = {
-            "seed_value": ("INT", {"default": -1}),
-            "num_images": ("INT", {"default": 1, "min": 1, "max": 10}),
-            "output_format": (["png", "jpeg", "webp"], {"default": "png"}),
-            "endpoint": ("STRING", {"default": "https://api.deepgen.app"}),
-            "output_prefix": ("STRING", {"default": ""}),
-            
-            # Dynamic combo fields
-            "resolution": ([""], {"default": ""}),
-            "aspect_ratio": (["Auto"], {"default": "Auto"}),
-            "pixel_size": ([""], {"default": ""}),
-            
-            # Additional T2I fields
-            "temperature": ("FLOAT", {"default": 0.7, "min": 0.0, "max": 2.0, "step": 0.1}),
-            "cfg_scale": ("FLOAT", {"default": 7.0, "min": 0.0, "max": 30.0, "step": 0.5}),
-            "steps": ("INT", {"default": 20, "min": 1, "max": 150}),
-            "loras": ("STRING", {"default": ""}),
-            "style": ("STRING", {"default": ""}),
-            "queue": ("BOOLEAN", {"default": False}),
-            "auto_fix": ("BOOLEAN", {"default": False}),
-            "enable_safety_checker": ("BOOLEAN", {"default": True}),
-            "transparent_background": ("BOOLEAN", {"default": False}),
-            "partial_images": ("INT", {"default": 1, "min": 1, "max": 100}),
-            "quality": ("STRING", {"default": "standard"}),
-        }
-
-        return {
-            "required": {
-                "model": (cls.models_list, {"default": cls.models_list[0] if cls.models_list else ""}),
-                "prompt": ("STRING", {"default": "", "multiline": True}),
-                "negative_prompt": ("STRING", {"default": "", "multiline": True}),
-            },
-            "optional": optional_inputs,
-        }
+        return {"required": {}, "optional": {}}
 
     RETURN_TYPES = ("IMAGE", "STRING", "FLOAT",)
     RETURN_NAMES = ("IMAGE", "output_prefix_and_model", "total_credits_used",)
@@ -77,7 +26,6 @@ class ImageNode:
 
     def generate_image(
         self,
-        model,
         prompt,
         negative_prompt="",
         seed_value=-1,
@@ -101,9 +49,9 @@ class ImageNode:
         quality="standard",
         **kwargs
     ):
-        # Lookup alias_id from the selected model name
-        alias_id = getattr(self, "models_map", {}).get(model, "flux_schnell")
-        supported_inputs = getattr(self, "supported_inputs_map", {}).get(alias_id, [])
+        # Use properties from the subclass directly
+        alias_id = getattr(self, "alias_id", "flux_schnell")
+        supported_inputs = getattr(self, "supported_inputs", [])
 
         arguments = {
             "prompt": prompt,
@@ -300,12 +248,4 @@ class ImageNode:
         return ResultProcessor.create_blank_image()
 
 
-# Node class mappings
-NODE_CLASS_MAPPINGS = {
-    "Image_deepgen": ImageNode,
-}
 
-# Node display name mappings
-NODE_DISPLAY_NAME_MAPPINGS = {
-    "Image_deepgen": "Image (deepgen)",
-}

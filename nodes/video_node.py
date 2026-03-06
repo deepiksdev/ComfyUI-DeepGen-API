@@ -12,57 +12,10 @@ from .deepgen_utils import DeepGenApiHandler, DeepGenConfig, ImageUtils, ResultP
 deepgen_config = DeepGenConfig()
 
 class VideoNode:
+    # Base INPUT_TYPES left blank as this will be a dynamically generated subclass.
     @classmethod
     def INPUT_TYPES(cls):
-        # Load models from CSV
-        cls.models_list = []
-        cls.supported_inputs_map = {}
-        
-        csv_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "models.csv")
-        try:
-            import csv
-            with open(csv_path, mode='r', encoding='utf-8') as f:
-                reader = csv.reader(f)
-                for row in reader:
-                    if len(row) >= 11 and row[10].strip() == "T2V":
-                        cls.models_list.append(row[1])
-                        cls.models_map[row[1]] = row[0]
-                        cls.supported_inputs_map[row[0]] = [x.strip() for x in row[2].split(",")] if row[2].strip() else []
-        except Exception as e:
-            print(f"DeepGen: Failed to load models.csv for video_node: {e}")
-            cls.models_list = ["Kling 2.5 Turbo Pro"]
-            cls.models_map = {"Kling 2.5 Turbo Pro": "kling2.5-turbo-pro"}
-            cls.supported_inputs_map = {"kling2.5-turbo-pro": []}
-
-        return {
-            "required": {
-                "model": (cls.models_list, {"default": cls.models_list[0] if cls.models_list else ""}),
-                "prompt": ("STRING", {"default": "", "multiline": True}),
-            },
-            "optional": {
-                "seed_value": ("INT", {"default": -1}),
-                "variations": ("INT", {"default": 1, "min": 1, "max": 10, "step": 1}),
-                "endpoint": ("STRING", {"default": "https://api.deepgen.app"}),
-                "output_prefix": ("STRING", {"default": ""}),
-                
-                # Dynamic combo fields
-                "duration": (["5", "10"], {"default": "5"}),
-                "aspect_ratio": (["16:9", "9:16", "1:1", "4:3", "3:4", "21:9", "9:21"], {"default": "16:9"}),
-                "resolution": ([""], {"default": ""}),
-                
-                # Additional T2V fields
-                "temperature": ("FLOAT", {"default": 0.7, "min": 0.0, "max": 2.0, "step": 0.1}),
-                "cfg_scale": ("FLOAT", {"default": 7.0, "min": 0.0, "max": 30.0, "step": 0.5}),
-                "negative_prompt": ("STRING", {"default": "", "multiline": True}),
-                "queue": ("BOOLEAN", {"default": False}),
-                "loop": ("BOOLEAN", {"default": False}),
-                "generate_audio": ("BOOLEAN", {"default": False}),
-                "shot_type": ("STRING", {"default": ""}),
-                "auto_fix": ("BOOLEAN", {"default": False}),
-                "enable_safety_checker": ("BOOLEAN", {"default": True}),
-                "safety_tolerance": ("STRING", {"default": "Auto"}),
-            },
-        }
+        return {"required": {}, "optional": {}}
 
     @classmethod
     def VALIDATE_INPUTS(cls, **kwargs):
@@ -76,7 +29,6 @@ class VideoNode:
 
     def generate_video(
         self,
-        model,
         prompt,
         seed_value=-1,
         variations=1,
@@ -98,8 +50,8 @@ class VideoNode:
         **kwargs
     ):
         try:
-            alias_id = getattr(self, "models_map", {}).get(model, "kling2.5-turbo-pro")
-            supported_inputs = getattr(self, "supported_inputs_map", {}).get(alias_id, [])
+            alias_id = getattr(self, "alias_id", "kling2.5-turbo-pro")
+            supported_inputs = getattr(self, "supported_inputs", [])
             
             arguments = {
                 "prompt": prompt,
@@ -318,12 +270,4 @@ class VideoNode:
         return final_results
 
 
-# Node class mappings
-NODE_CLASS_MAPPINGS = {
-    "Video_deepgen": VideoNode,
-}
 
-# Node display name mappings
-NODE_DISPLAY_NAME_MAPPINGS = {
-    "Video_deepgen": "Video (deepgen)",
-}
