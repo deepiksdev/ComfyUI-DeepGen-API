@@ -96,7 +96,7 @@ class BaseTaskNode:
         minimum_resolution = unwrap(kwargs.get("minimum_resolution", ""))
         aspect_ratio = unwrap(kwargs.get("aspect_ratio", ""))
         output_format = unwrap(kwargs.get("output_format", ""))
-        endpoint = unwrap(kwargs.get("endpoint", "https://api.deepgen.app"))
+        endpoint = unwrap(kwargs.get("endpoint"))
         unique_id = unwrap(kwargs.get("unique_id"))
         extra_pnginfo = unwrap(kwargs.get("extra_pnginfo"))
 
@@ -229,7 +229,6 @@ class T2TNode(BaseTaskNode):
                 "config_json": ("STRING", {"default": "", "multiline": True}),
             },
             "optional": {
-                "endpoint": ("STRING", {"default": "https://api.deepgen.app"}),
             },
             "hidden": {"extra_pnginfo": "EXTRA_PNGINFO", "unique_id": "UNIQUE_ID"}
         }
@@ -237,7 +236,7 @@ class T2TNode(BaseTaskNode):
     RETURN_TYPES = ("STRING", "STRING", "FLOAT",)
     RETURN_NAMES = ("output", "model", "total_credits_used",)
     FUNCTION = "generate"
-    CATEGORY = "DeepGen/Task"
+    CATEGORY = "DeepGen/Generators"
 
     def generate(self, **kwargs):
         return self.run_generation("T2T", **kwargs)
@@ -256,7 +255,6 @@ class I2TNode(BaseTaskNode):
             },
             "optional": {
                 **optional_images,
-                "endpoint": ("STRING", {"default": "https://api.deepgen.app"}),
             },
             "hidden": {"extra_pnginfo": "EXTRA_PNGINFO", "unique_id": "UNIQUE_ID"}
         }
@@ -264,7 +262,7 @@ class I2TNode(BaseTaskNode):
     RETURN_TYPES = ("STRING", "STRING", "FLOAT",)
     RETURN_NAMES = ("output", "model", "total_credits_used",)
     FUNCTION = "generate"
-    CATEGORY = "DeepGen/Task"
+    CATEGORY = "DeepGen/Generators"
 
     def generate(self, **kwargs):
         return self.run_generation("I2T", **kwargs)
@@ -286,7 +284,6 @@ class T2INode(BaseTaskNode):
                 "minimum_resolution": ("STRING", {"default": ""}),
                 "aspect_ratio": ("STRING", {"default": ""}),
                 "output_format": (["png", "jpeg", "webp"], {"default": "png"}),
-                "endpoint": ("STRING", {"default": "https://api.deepgen.app"}),
             },
             "hidden": {"extra_pnginfo": "EXTRA_PNGINFO", "unique_id": "UNIQUE_ID"}
         }
@@ -294,7 +291,7 @@ class T2INode(BaseTaskNode):
     RETURN_TYPES = ("IMAGE", "STRING", "FLOAT",)
     RETURN_NAMES = ("IMAGE", "output_prefix_and_model", "total_credits_used",)
     FUNCTION = "generate"
-    CATEGORY = "DeepGen/Task"
+    CATEGORY = "DeepGen/Generators"
 
     def generate(self, **kwargs):
         return self.run_generation("T2I", **kwargs)
@@ -317,7 +314,6 @@ class I2INode(BaseTaskNode):
                 "minimum_resolution": ("STRING", {"default": ""}),
                 "aspect_ratio": ("STRING", {"default": ""}),
                 "output_format": (["png", "jpeg", "webp"], {"default": "png"}),
-                "endpoint": ("STRING", {"default": "https://api.deepgen.app"}),
             },
             "hidden": {"extra_pnginfo": "EXTRA_PNGINFO", "unique_id": "UNIQUE_ID"}
         }
@@ -325,7 +321,7 @@ class I2INode(BaseTaskNode):
     RETURN_TYPES = ("IMAGE", "STRING", "FLOAT",)
     RETURN_NAMES = ("IMAGE", "output_prefix_and_model", "total_credits_used",)
     FUNCTION = "generate"
-    CATEGORY = "DeepGen/Task"
+    CATEGORY = "DeepGen/Generators"
 
     def generate(self, **kwargs):
         return self.run_generation("I2I", **kwargs)
@@ -350,7 +346,6 @@ class I2I3Node(BaseTaskNode):
                 "minimum_resolution": ("STRING", {"default": ""}),
                 "aspect_ratio": ("STRING", {"default": ""}),
                 "output_format": (["png", "jpeg", "webp"], {"default": "png"}),
-                "endpoint": ("STRING", {"default": "https://api.deepgen.app"}),
             },
             "hidden": {"extra_pnginfo": "EXTRA_PNGINFO", "unique_id": "UNIQUE_ID"}
         }
@@ -358,7 +353,7 @@ class I2I3Node(BaseTaskNode):
     RETURN_TYPES = ("IMAGE", "STRING", "FLOAT",)
     RETURN_NAMES = ("IMAGE", "output_prefix_and_model", "total_credits_used",)
     FUNCTION = "generate"
-    CATEGORY = "DeepGen/Task"
+    CATEGORY = "DeepGen/Generators"
 
     def generate(self, **kwargs):
         return self.run_generation("I2I3", **kwargs)
@@ -382,7 +377,6 @@ class I2I10Node(BaseTaskNode):
                 "minimum_resolution": ("STRING", {"default": ""}),
                 "aspect_ratio": ("STRING", {"default": ""}),
                 "output_format": (["png", "jpeg", "webp"], {"default": "png"}),
-                "endpoint": ("STRING", {"default": "https://api.deepgen.app"}),
             },
             "hidden": {"extra_pnginfo": "EXTRA_PNGINFO", "unique_id": "UNIQUE_ID"}
         }
@@ -390,7 +384,7 @@ class I2I10Node(BaseTaskNode):
     RETURN_TYPES = ("IMAGE", "STRING", "FLOAT",)
     RETURN_NAMES = ("IMAGE", "output_prefix_and_model", "total_credits_used",)
     FUNCTION = "generate"
-    CATEGORY = "DeepGen/Task"
+    CATEGORY = "DeepGen/Generators"
 
     def generate(self, **kwargs):
         return self.run_generation("I2I10", **kwargs)
@@ -410,7 +404,6 @@ class T2VNode(BaseTaskNode):
             },
             "optional": {
                 "aspect_ratio": ("STRING", {"default": ""}),
-                "endpoint": ("STRING", {"default": "https://api.deepgen.app"}),
             },
             "hidden": {"extra_pnginfo": "EXTRA_PNGINFO", "unique_id": "UNIQUE_ID"}
         }
@@ -418,7 +411,7 @@ class T2VNode(BaseTaskNode):
     RETURN_TYPES = ("VIDEO", "STRING", "FLOAT",)
     RETURN_NAMES = ("VIDEO", "output_prefix_and_model", "total_credits_used",)
     FUNCTION = "generate"
-    CATEGORY = "DeepGen/Task"
+    CATEGORY = "DeepGen/Generators"
 
     def generate(self, **kwargs):
         return self.run_generation("T2V", **kwargs)
@@ -447,7 +440,6 @@ class V2VRNode(BaseTaskNode):
             "optional": {
                 **images,
                 "aspect_ratio": ("STRING", {"default": ""}),
-                "endpoint": ("STRING", {"default": "https://api.deepgen.app"}),
             },
             "hidden": {"extra_pnginfo": "EXTRA_PNGINFO", "unique_id": "UNIQUE_ID"}
         }
@@ -455,7 +447,7 @@ class V2VRNode(BaseTaskNode):
     RETURN_TYPES = ("VIDEO", "STRING", "FLOAT",)
     RETURN_NAMES = ("VIDEO", "output_prefix_and_model", "total_credits_used",)
     FUNCTION = "generate"
-    CATEGORY = "DeepGen/Task"
+    CATEGORY = "DeepGen/Generators"
 
     def generate(self, **kwargs):
         return self.run_generation("V2VR", **kwargs)
@@ -472,12 +464,12 @@ NODE_CLASS_MAPPINGS = {
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "DeepGen_T2T": "T2T (Text to Text)",
-    "DeepGen_I2T": "I2T (Image to Text)",
-    "DeepGen_T2I": "T2I (Text to Image)",
-    "DeepGen_I2I": "I2I (Image to Image 1)",
-    "DeepGen_I2I3": "I2I3 (Image to Image 3)",
-    "DeepGen_I2I10": "I2I10 (Image to Image 10)",
-    "DeepGen_T2V": "T2V (Text to Video)",
-    "DeepGen_V2VR": "V2VR (Video to Video Reference)",
+    "DeepGen_T2T": "LLM",
+    "DeepGen_I2T": "Vision",
+    "DeepGen_T2I": "Text to Image",
+    "DeepGen_I2I": "Image to Image",
+    "DeepGen_I2I3": "3 Images to Image",
+    "DeepGen_I2I10": "10 Images to Image",
+    "DeepGen_T2V": "Text to Video",
+    "DeepGen_V2VR": "Video Image And Reference to Video",
 }

@@ -5,7 +5,6 @@ from .nodes import api_routes
 
 node_list = [
     "task_nodes",
-    "element_node",
     "display_node",
     "video_to_image_node",
 ]
