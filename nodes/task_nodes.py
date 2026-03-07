@@ -208,13 +208,8 @@ class BaseTaskNode:
                 return (img_tensor, prefixed_model, credits_out)
 
         except Exception as e:
-            if task_type in ["T2T", "I2T"]:
-                return (f"Error: {e}", model, 0.0)
-            elif task_type in ["T2V", "V2VR"]:
-                return (f"Error: {e}", model, 0.0)
-            else:
-                blank_img = ResultProcessor.create_blank_image()[0]
-                return (blank_img, model, 0.0)
+            print(f"DeepGen task generation error: {e}")
+            raise e
 
 
 class T2TNode(BaseTaskNode):
