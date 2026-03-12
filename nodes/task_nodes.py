@@ -590,42 +590,6 @@ class T2VNode(BaseTaskNode):
     def generate(self, **kwargs):
         return self.run_generation("T2V", **kwargs)
 
-class V2VRNode(BaseTaskNode):
-    @classmethod
-    def INPUT_TYPES(cls):
-        models = load_models_for_task("V2VR")
-        images = {}
-        for i in range(1, 5):
-            images[f"frontal_image_{i}"] = ("IMAGE",)
-            for j in range(1, 4):
-                images[f"reference_image_{i}_{j}"] = ("IMAGE",)
-        
-        return {
-            "required": {
-                "model": (models,),
-                "prompt": ("STRING", {"default": "", "multiline": True}),
-                "seed_value": ("INT", {"default": 1000}),
-                "nb_results": ("INT", {"default": 1, "min": 1, "max": 10}),
-                "output_prefix": ("STRING", {"default": ""}),
-                "config_json": ("STRING", {"default": "", "multiline": True}),
-                "start_image": ("IMAGE",),
-                "end_image": ("IMAGE",),
-            },
-            "optional": {
-                **images,
-                "aspect_ratio": ("STRING", {"default": ""}),
-            },
-            "hidden": {"extra_pnginfo": "EXTRA_PNGINFO", "unique_id": "UNIQUE_ID"}
-        }
-
-    RETURN_TYPES = ("VIDEO", "STRING", "FLOAT",)
-    RETURN_NAMES = ("VIDEO", "output_prefix_and_model", "total_credits_used",)
-    FUNCTION = "generate"
-    CATEGORY = "DeepGen/Generators"
-
-    def generate(self, **kwargs):
-        return self.run_generation("V2VR", **kwargs)
-
 class I2VNode(BaseTaskNode):
     @classmethod
     def INPUT_TYPES(cls):
@@ -745,6 +709,42 @@ class V2VNode(BaseTaskNode):
     def generate(self, **kwargs):
         return self.run_generation("V2V", **kwargs)
 
+class V2VRNode(BaseTaskNode):
+    @classmethod
+    def INPUT_TYPES(cls):
+        models = load_models_for_task("V2VR")
+        images = {}
+        for i in range(1, 5):
+            images[f"frontal_image_{i}"] = ("IMAGE",)
+            for j in range(1, 4):
+                images[f"reference_image_{i}_{j}"] = ("IMAGE",)
+        
+        return {
+            "required": {
+                "model": (models,),
+                "prompt": ("STRING", {"default": "", "multiline": True}),
+                "seed_value": ("INT", {"default": 1000}),
+                "nb_results": ("INT", {"default": 1, "min": 1, "max": 10}),
+                "output_prefix": ("STRING", {"default": ""}),
+                "config_json": ("STRING", {"default": "", "multiline": True}),
+                "start_image": ("IMAGE",),
+                "end_image": ("IMAGE",),
+            },
+            "optional": {
+                **images,
+                "aspect_ratio": ("STRING", {"default": ""}),
+            },
+            "hidden": {"extra_pnginfo": "EXTRA_PNGINFO", "unique_id": "UNIQUE_ID"}
+        }
+
+    RETURN_TYPES = ("VIDEO", "STRING", "FLOAT",)
+    RETURN_NAMES = ("VIDEO", "output_prefix_and_model", "total_credits_used",)
+    FUNCTION = "generate"
+    CATEGORY = "DeepGen/Generators"
+
+    def generate(self, **kwargs):
+        return self.run_generation("V2VR", **kwargs)
+
 NODE_CLASS_MAPPINGS = {
     "DeepGen_T2T": T2TNode,
     "DeepGen_I2T": I2TNode,
@@ -761,17 +761,17 @@ NODE_CLASS_MAPPINGS = {
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "DeepGen_T2T": "01. Invoke LLM",
-    "DeepGen_I2T": "02. Review Images",
-    "DeepGen_T2I": "03. Generate Image (from Text)",
-    "DeepGen_I2I": "04. Edit Image",
-    "DeepGen_I2I3": "05. Generate Image (from 3 Images)",
-    "DeepGen_I2I10": "06. Generate Image (from 10 Images)",
-    "DeepGen_T2V": "07. Generate Video (from Text)",
-    "DeepGen_I2V": "08. Generate Video (from Start Frame)",
-    "DeepGen_I2V2": "09. Generate Video (from Start and End Frames)",
-    "DeepGen_I2VR": "10. Generate Video (from Images with Elements)",
-    "DeepGen_V2V": "11. Edit Video",
-    "DeepGen_V2VR": "12. Edit Video (with Elements)",
+    "DeepGen_T2T": "Invoke LLM",
+    "DeepGen_I2T": "Review Images",
+    "DeepGen_T2I": "Generate Image (from Text)",
+    "DeepGen_I2I": "Edit Image",
+    "DeepGen_I2I3": "Generate Image (from 3 Images)",
+    "DeepGen_I2I10": "Generate Image (from 10 Images)",
+    "DeepGen_T2V": "Generate Video (from Text)",
+    "DeepGen_I2V": "Generate Video (from Start Frame)",
+    "DeepGen_I2V2": "Generate Video (from Start and End Frames)",
+    "DeepGen_I2VR": "Generate Video (from Images with Elements)",
+    "DeepGen_V2V": "Edit Video",
+    "DeepGen_V2VR": "Edit Video (with Elements)",
 }
 
