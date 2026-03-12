@@ -240,14 +240,15 @@ class BaseTaskNode:
         extra_pnginfo = unwrap(kwargs.get("extra_pnginfo"))
 
         arguments = {
+            "task": task_type,
             "prompt": prompt,
             "seed": seed_value,
         }
         
-        if task_type in ["T2I", "I2I", "I2I3", "I2I10", "T2V", "V2VR"]:
+        if task_type in ["T2I", "I2I", "I2I3", "I2I10", "T2V", "I2V", "I2V2", "I2VR", "V2V", "V2VR"]:
             arguments["num_images"] = nb_results # used for both image and video
             
-        if task_type in ["T2V", "V2VR"]:
+        if task_type in ["T2V", "I2V", "I2V2", "I2VR", "V2V", "V2VR"]:
             arguments["queue"] = True
             
         csv_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "models.csv")
@@ -300,7 +301,7 @@ class BaseTaskNode:
         arguments.update(extra_args)
 
         try:
-            if task_type in ["T2V", "V2VR"]:
+            if task_type in ["T2V", "I2V", "I2V2", "I2VR", "V2V", "V2VR"]:
                 if nb_results > 1:
                     results = ApiHandler.submit_multiple_and_get_results(model, arguments, nb_results)
                     results = self._poll_video_results(results)
@@ -625,6 +626,125 @@ class V2VRNode(BaseTaskNode):
     def generate(self, **kwargs):
         return self.run_generation("V2VR", **kwargs)
 
+class I2VNode(BaseTaskNode):
+    @classmethod
+    def INPUT_TYPES(cls):
+        models = load_models_for_task("I2V")
+        return {
+            "required": {
+                "model": (models,),
+                "prompt": ("STRING", {"default": "", "multiline": True}),
+                "seed_value": ("INT", {"default": 1000}),
+                "nb_results": ("INT", {"default": 1, "min": 1, "max": 10}),
+                "output_prefix": ("STRING", {"default": ""}),
+                "config_json": ("STRING", {"default": "", "multiline": True}),
+                "start_image": ("IMAGE",),
+            },
+            "optional": {
+                "aspect_ratio": ("STRING", {"default": ""}),
+            },
+            "hidden": {"extra_pnginfo": "EXTRA_PNGINFO", "unique_id": "UNIQUE_ID"}
+        }
+
+    RETURN_TYPES = ("VIDEO", "STRING", "FLOAT",)
+    RETURN_NAMES = ("VIDEO", "output_prefix_and_model", "total_credits_used",)
+    FUNCTION = "generate"
+    CATEGORY = "DeepGen/Generators"
+
+    def generate(self, **kwargs):
+        return self.run_generation("I2V", **kwargs)
+
+class I2V2Node(BaseTaskNode):
+    @classmethod
+    def INPUT_TYPES(cls):
+        models = load_models_for_task("I2V2")
+        return {
+            "required": {
+                "model": (models,),
+                "prompt": ("STRING", {"default": "", "multiline": True}),
+                "seed_value": ("INT", {"default": 1000}),
+                "nb_results": ("INT", {"default": 1, "min": 1, "max": 10}),
+                "output_prefix": ("STRING", {"default": ""}),
+                "config_json": ("STRING", {"default": "", "multiline": True}),
+                "start_image": ("IMAGE",),
+                "end_image": ("IMAGE",),
+            },
+            "optional": {
+                "aspect_ratio": ("STRING", {"default": ""}),
+            },
+            "hidden": {"extra_pnginfo": "EXTRA_PNGINFO", "unique_id": "UNIQUE_ID"}
+        }
+
+    RETURN_TYPES = ("VIDEO", "STRING", "FLOAT",)
+    RETURN_NAMES = ("VIDEO", "output_prefix_and_model", "total_credits_used",)
+    FUNCTION = "generate"
+    CATEGORY = "DeepGen/Generators"
+
+    def generate(self, **kwargs):
+        return self.run_generation("I2V2", **kwargs)
+
+class I2VRNode(BaseTaskNode):
+    @classmethod
+    def INPUT_TYPES(cls):
+        models = load_models_for_task("I2VR")
+        images = {}
+        for i in range(1, 4):
+            images[f"image_{i}"] = ("IMAGE",)
+            images[f"element_{i}"] = ("IMAGE",)
+        
+        return {
+            "required": {
+                "model": (models,),
+                "prompt": ("STRING", {"default": "", "multiline": True}),
+                "seed_value": ("INT", {"default": 1000}),
+                "nb_results": ("INT", {"default": 1, "min": 1, "max": 10}),
+                "output_prefix": ("STRING", {"default": ""}),
+                "config_json": ("STRING", {"default": "", "multiline": True}),
+                "start_image": ("IMAGE",),
+            },
+            "optional": {
+                **images,
+                "aspect_ratio": ("STRING", {"default": ""}),
+            },
+            "hidden": {"extra_pnginfo": "EXTRA_PNGINFO", "unique_id": "UNIQUE_ID"}
+        }
+
+    RETURN_TYPES = ("VIDEO", "STRING", "FLOAT",)
+    RETURN_NAMES = ("VIDEO", "output_prefix_and_model", "total_credits_used",)
+    FUNCTION = "generate"
+    CATEGORY = "DeepGen/Generators"
+
+    def generate(self, **kwargs):
+        return self.run_generation("I2VR", **kwargs)
+
+class V2VNode(BaseTaskNode):
+    @classmethod
+    def INPUT_TYPES(cls):
+        models = load_models_for_task("V2V")
+        return {
+            "required": {
+                "model": (models,),
+                "prompt": ("STRING", {"default": "", "multiline": True}),
+                "seed_value": ("INT", {"default": 1000}),
+                "nb_results": ("INT", {"default": 1, "min": 1, "max": 10}),
+                "output_prefix": ("STRING", {"default": ""}),
+                "config_json": ("STRING", {"default": "", "multiline": True}),
+                "video": ("IMAGE",),
+            },
+            "optional": {
+                "aspect_ratio": ("STRING", {"default": ""}),
+            },
+            "hidden": {"extra_pnginfo": "EXTRA_PNGINFO", "unique_id": "UNIQUE_ID"}
+        }
+
+    RETURN_TYPES = ("VIDEO", "STRING", "FLOAT",)
+    RETURN_NAMES = ("VIDEO", "output_prefix_and_model", "total_credits_used",)
+    FUNCTION = "generate"
+    CATEGORY = "DeepGen/Generators"
+
+    def generate(self, **kwargs):
+        return self.run_generation("V2V", **kwargs)
+
 NODE_CLASS_MAPPINGS = {
     "DeepGen_T2T": T2TNode,
     "DeepGen_I2T": I2TNode,
@@ -633,16 +753,25 @@ NODE_CLASS_MAPPINGS = {
     "DeepGen_I2I3": I2I3Node,
     "DeepGen_I2I10": I2I10Node,
     "DeepGen_T2V": T2VNode,
+    "DeepGen_I2V": I2VNode,
+    "DeepGen_I2V2": I2V2Node,
+    "DeepGen_I2VR": I2VRNode,
+    "DeepGen_V2V": V2VNode,
     "DeepGen_V2VR": V2VRNode,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "DeepGen_T2T": "LLM",
-    "DeepGen_I2T": "Vision",
-    "DeepGen_T2I": "Image (from text)",
-    "DeepGen_I2I": "Image (from 1 image)",
-    "DeepGen_I2I3": "Image (from 3 images)",
-    "DeepGen_I2I10": "Image (from 10 images)",
-    "DeepGen_T2V": "Video (from text)",
-    "DeepGen_V2VR": "Video (from video, images and references)",
+    "DeepGen_T2T": "Invoke LLM",
+    "DeepGen_I2T": "Review Images",
+    "DeepGen_T2I": "Generate Image (from Text)",
+    "DeepGen_I2I": "Edit Image",
+    "DeepGen_I2I3": "Generate Image (from 3 Images)",
+    "DeepGen_I2I10": "Generate Image (from 10 Images)",
+    "DeepGen_T2V": "Generate Video (from Text)",
+    "DeepGen_I2V": "Generate Video (from Start Frame)",
+    "DeepGen_I2V2": "Generate Video (from Start and End Frames)",
+    "DeepGen_I2VR": "Generate Video (from Images with Elements)",
+    "DeepGen_V2V": "Edit Video",
+    "DeepGen_V2VR": "Edit Video (with Elements)",
 }
+
