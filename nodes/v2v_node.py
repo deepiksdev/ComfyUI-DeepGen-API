@@ -1,5 +1,6 @@
 from .task_utils import BaseTaskNode, load_models_for_task
 
+print("DeepGen: Loading V2VNode...")
 class V2VNode(BaseTaskNode):
     @classmethod
     def INPUT_TYPES(cls):
