@@ -14,11 +14,14 @@ from .nodes.i2v2_node import I2V2Node
 from .nodes.i2vr_node import I2VRNode
 from .nodes.v2v_node import V2VNode
 from .nodes.v2vr_node import V2VRNode
-from .nodes.display_node import NODE_CLASS_MAPPINGS as DISPLAY_MAPPINGS, NODE_DISPLAY_NAME_MAPPINGS as DISPLAY_NAMES
-from .nodes.video_to_image_node import NODE_CLASS_MAPPINGS as VTI_MAPPINGS, NODE_DISPLAY_NAME_MAPPINGS as VTI_NAMES
-
+from .nodes.z2z_node import Z2ZNode
+from .nodes.z2z10_node import Z2Z10Node
+from .nodes.display_node import DisplayFloatNode
+from .nodes.video_to_image_node import VideoToImageNode
 # Node order here controls display order in ComfyUI
 NODE_CLASS_MAPPINGS = {
+    "DeepGen_Z2Z": Z2ZNode,
+    "DeepGen_Z2Y": Z2Z10Node,
     "DeepGen_T2I": T2INode,
     "DeepGen_I2I": I2INode,
     "DeepGen_I2I3": I2I3Node,
@@ -31,12 +34,14 @@ NODE_CLASS_MAPPINGS = {
     "DeepGen_V2VR": V2VRNode,
     "DeepGen_T2T": T2TNode,
     "DeepGen_I2T": I2TNode,
-    **DISPLAY_MAPPINGS,
-    **VTI_MAPPINGS,
+    "DisplayFloat_deepgen": DisplayFloatNode,
+    "VideoToImage_deepgen": VideoToImageNode,
 }
 
 
 NODE_DISPLAY_NAME_MAPPINGS = {
+    "DeepGen_Z2Z": "Go Z2Z",
+    "DeepGen_Z2Y": "Go Z2Z10",
     "DeepGen_T2T": "Invoke LLM",
     "DeepGen_I2T": "Review Images",
     "DeepGen_T2I": "Generate Image (from Text)",
@@ -49,8 +54,8 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "DeepGen_I2VR": "Generate Video (from Images with Elements)",
     "DeepGen_V2V": "Edit Video",
     "DeepGen_V2VR": "Edit Video (with Elements)",
-    **DISPLAY_NAMES,
-    **VTI_NAMES,
+    "DisplayFloat_deepgen": "Display Float",
+    "VideoToImage_deepgen": "Extract Frame From Video",
 }
 
 WEB_DIRECTORY = "./web"
