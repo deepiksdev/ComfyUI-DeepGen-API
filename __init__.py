@@ -14,48 +14,41 @@ from .nodes.i2v2_node import I2V2Node
 from .nodes.i2vr_node import I2VRNode
 from .nodes.v2v_node import V2VNode
 from .nodes.v2vr_node import V2VRNode
-from .nodes.z2z_node import Z2ZNode
-from .nodes.z2z10_node import Z2Z10Node
-from .nodes.display_node import DisplayFloatNode
-from .nodes.video_to_image_node import VideoToImageNode
-# Node order here controls display order in ComfyUI
+# Node order here controls display order in ComfyUI, provided ALL keys have the SAME EXACT LENGTH.
+# ComfyUI sorts first by len(key) AND THEN by insertion order in the dict.
+# We pad all keys to exactly 12 characters (e.g. DeepGen_T2T0) to match.
 NODE_CLASS_MAPPINGS = {
-    "DeepGen_Z2Z": Z2ZNode,
-    "DeepGen_Z2Y": Z2Z10Node,
-    "DeepGen_T2I": T2INode,
-    "DeepGen_I2I": I2INode,
+    "DeepGen_T2T0": T2TNode,
+    "DeepGen_I2T0": I2TNode,
+    "DeepGen_T2I0": T2INode,
+    "DeepGen_I2I0": I2INode,
     "DeepGen_I2I3": I2I3Node,
-    "DeepGen_I2I10": I2I10Node,
-    "DeepGen_T2V": T2VNode,
-    "DeepGen_I2V": I2VNode,
+    "DeepGen_I2IX": I2I10Node,
+    "DeepGen_T2V0": T2VNode,
+    "DeepGen_I2V0": I2VNode,
     "DeepGen_I2V2": I2V2Node,
     "DeepGen_I2VR": I2VRNode,
-    "DeepGen_V2V": V2VNode,
+    "DeepGen_V2V0": V2VNode,
     "DeepGen_V2VR": V2VRNode,
-    "DeepGen_T2T": T2TNode,
-    "DeepGen_I2T": I2TNode,
-    "DisplayFloat_deepgen": DisplayFloatNode,
-    "VideoToImage_deepgen": VideoToImageNode,
+    "DeepGen_F2T0": DisplayFloatNode,
+    "DeepGen_VTI0": VideoToImageNode,
 }
 
-
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "DeepGen_Z2Z": "Go Z2Z",
-    "DeepGen_Z2Y": "Go Z2Z10",
-    "DeepGen_T2T": "Invoke LLM",
-    "DeepGen_I2T": "Review Images",
-    "DeepGen_T2I": "Generate Image (from Text)",
-    "DeepGen_I2I": "Edit Image",
+    "DeepGen_T2T0": "Invoke LLM",
+    "DeepGen_I2T0": "Review Images",
+    "DeepGen_T2I0": "Generate Image (from Text)",
+    "DeepGen_I2I0": "Edit Image",
     "DeepGen_I2I3": "Generate Image (from 3 Images)",
-    "DeepGen_I2I10": "Generate Image (from 10 Images)",
-    "DeepGen_T2V": "Generate Video (from Text)",
-    "DeepGen_I2V": "Generate Video (from Start Frame)",
+    "DeepGen_I2IX": "Generate Image (from 10 Images)",
+    "DeepGen_T2V0": "Generate Video (from Text)",
+    "DeepGen_I2V0": "Generate Video (from Start Frame)",
     "DeepGen_I2V2": "Generate Video (from Start and End Frames)",
     "DeepGen_I2VR": "Generate Video (from Images with Elements)",
-    "DeepGen_V2V": "Edit Video",
+    "DeepGen_V2V0": "Edit Video",
     "DeepGen_V2VR": "Edit Video (with Elements)",
-    "DisplayFloat_deepgen": "Display Float",
-    "VideoToImage_deepgen": "Extract Frame From Video",
+    "DeepGen_F2T0": "Display Float",
+    "DeepGen_VTI0": "Extract Frame From Video",
 }
 
 WEB_DIRECTORY = "./web"
