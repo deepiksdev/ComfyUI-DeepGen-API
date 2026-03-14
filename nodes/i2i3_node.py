@@ -12,11 +12,11 @@ class I2I3Node(BaseTaskNode):
                 "nb_results": ("INT", {"default": 1, "min": 1, "max": 10}),
                 "output_prefix": ("STRING", {"default": ""}),
                 "config_json": ("STRING", {"default": "", "multiline": True}),
+            },
+            "optional": {
                 "image_1": ("IMAGE",),
                 "image_2": ("IMAGE",),
                 "image_3": ("IMAGE",),
-            },
-            "optional": {
                 "minimum_resolution": (["500", "1K", "2K", "4K"], {"default": "1K"}),
                 "aspect_ratio": (["1:1", "9:16", "16:9", "3:4", "4:3", "3:2", "2:3", "5:4", "4:5", "21:9", "4:1", "1:4", "8:1", "1:8"], {"default": "1:1"}),
                 "output_format": (["png", "jpeg", "webp"], {"default": "png"}),

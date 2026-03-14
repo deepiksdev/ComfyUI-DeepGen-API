@@ -17,9 +17,9 @@ class I2VRNode(BaseTaskNode):
                 "nb_results": ("INT", {"default": 1, "min": 1, "max": 10}),
                 "output_prefix": ("STRING", {"default": ""}),
                 "config_json": ("STRING", {"default": "", "multiline": True}),
-                "start_image": ("IMAGE",),
             },
             "optional": {
+                "start_image": ("IMAGE",),
                 **images,
                 "aspect_ratio": ("STRING", {"default": ""}),
             },

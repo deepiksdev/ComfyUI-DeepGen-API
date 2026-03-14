@@ -4,7 +4,7 @@ class I2I10Node(BaseTaskNode):
     @classmethod
     def INPUT_TYPES(cls):
         models = load_models_for_task("I2I10")
-        required_images = {f"image_{i}": ("IMAGE",) for i in range(1, 11)}
+        optional_images = {f"image_{i}": ("IMAGE",) for i in range(1, 11)}
         return {
             "required": {
                 "model": (models,),
@@ -13,9 +13,9 @@ class I2I10Node(BaseTaskNode):
                 "nb_results": ("INT", {"default": 1, "min": 1, "max": 10}),
                 "output_prefix": ("STRING", {"default": ""}),
                 "config_json": ("STRING", {"default": "", "multiline": True}),
-                **required_images
             },
             "optional": {
+                **optional_images,
                 "minimum_resolution": (["500", "1K", "2K", "4K"], {"default": "1K"}),
                 "aspect_ratio": (["1:1", "9:16", "16:9", "3:4", "4:3", "3:2", "2:3", "5:4", "4:5", "21:9", "4:1", "1:4", "8:1", "1:8"], {"default": "1:1"}),
                 "output_format": (["png", "jpeg", "webp"], {"default": "png"}),

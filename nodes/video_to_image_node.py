@@ -9,8 +9,10 @@ class VideoToImageNode:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "video": ("VIDEO",),
                 "frame_index": ("INT", {"default": 0, "min": 0, "max": 10000, "step": 1}),
+            },
+            "optional": {
+                "video": ("VIDEO",),
             },
         }
 
