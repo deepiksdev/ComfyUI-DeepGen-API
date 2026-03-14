@@ -92,29 +92,24 @@ def parse_res_k(res_str):
     except:
         return 1024
 
-def get_best_pixel_size(pixel_sizes, target_size, target_ratio):
+def get_best_pixel_size(pixel_sizes, target_resolution, target_ratio):
     parsed = []
     for ps in pixel_sizes:
         try:
             w, h = map(int, ps.split('x'))
             ratio = w / h
             size = w * h
-            parsed.append({'ps': ps, 'ratio': ratio, 'size': size})
+            max_side = max(w, h)
+            parsed.append({'ps': ps, 'ratio': ratio, 'size': size, 'max_side': max_side})
         except:
             pass
     if not parsed:
         return None
         
-    valid_ratios = [p for p in parsed if p['ratio'] >= target_ratio]
-    if valid_ratios:
-        best_ratio = min(valid_ratios, key=lambda x: x['ratio'])['ratio']
-    else:
-        best_ratio = max(parsed, key=lambda x: x['ratio'])['ratio']
-        
+    best_ratio = min(parsed, key=lambda x: abs(x['ratio'] - target_ratio))['ratio']
     best_ratio_items = [p for p in parsed if abs(p['ratio'] - best_ratio) < 0.01]
     
-    target_area = target_size * target_size
-    valid_sizes = [p for p in best_ratio_items if p['size'] >= target_area]
+    valid_sizes = [p for p in best_ratio_items if p['max_side'] >= (target_resolution - 10)]
     if valid_sizes:
         best_item = min(valid_sizes, key=lambda x: x['size'])
     else:
@@ -122,30 +117,27 @@ def get_best_pixel_size(pixel_sizes, target_size, target_ratio):
         
     return best_item['ps']
 
-def get_best_resolution_and_ratio(resolutions, aspect_ratios, target_size, target_ratio):
+def get_best_resolution_and_ratio(resolutions, aspect_ratios, target_resolution, target_ratio):
     parsed_ar = []
     for ar in aspect_ratios:
         parsed_ar.append({'ar': ar, 'ratio': parse_ratio(ar)})
     
     if parsed_ar:
-        valid_ar = [p for p in parsed_ar if p['ratio'] >= target_ratio]
-        if valid_ar:
-            best_ar = min(valid_ar, key=lambda x: x['ratio'])['ar']
-        else:
-            best_ar = max(parsed_ar, key=lambda x: x['ratio'])['ar']
+        best_ar_obj = min(parsed_ar, key=lambda x: abs(x['ratio'] - target_ratio))
+        best_ar = best_ar_obj['ar']
     else:
         best_ar = None
 
     parsed_res = []
     for r in resolutions:
-        parsed_res.append({'res': r, 'size': parse_res_k(r)})
+        parsed_res.append({'res': r, 'val': parse_res_k(r)})
         
     if parsed_res:
-        valid_res = [p for p in parsed_res if p['size'] >= target_size]
+        valid_res = [p for p in parsed_res if p['val'] >= target_resolution]
         if valid_res:
-            best_res = min(valid_res, key=lambda x: x['size'])['res']
+            best_res = min(valid_res, key=lambda x: x['val'])['res']
         else:
-            best_res = max(parsed_res, key=lambda x: x['size'])['res']
+            best_res = max(parsed_res, key=lambda x: x['val'])['res']
     else:
         best_res = None
         
