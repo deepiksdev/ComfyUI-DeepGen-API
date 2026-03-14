@@ -261,9 +261,9 @@ class BaseTaskNode:
                         if len(row) > 3 and row[3].strip():
                             aspect_ratios_supported = [x.strip() for x in row[3].split(",")]
                         if len(row) > 4 and row[4].strip():
-                            pixel_sizes_supported = [x.strip() for x in row[4].split(",")]
+                            resolutions_supported = [x.strip() for x in row[4].split(",")]
                         if len(row) > 5 and row[5].strip():
-                            resolutions_supported = [x.strip() for x in row[5].split(",")]
+                            pixel_sizes_supported = [x.strip() for x in row[5].split(",")]
                         break
         except Exception:
             pass

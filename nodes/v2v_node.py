@@ -12,9 +12,9 @@ class V2VNode(BaseTaskNode):
                 "nb_results": ("INT", {"default": 1, "min": 1, "max": 10}),
                 "output_prefix": ("STRING", {"default": ""}),
                 "config_json": ("STRING", {"default": "", "multiline": True}),
-                "video": ("IMAGE",),
             },
             "optional": {
+                "video": ("IMAGE",),
                 "aspect_ratio": ("STRING", {"default": ""}),
             },
             "hidden": {"extra_pnginfo": "EXTRA_PNGINFO", "unique_id": "UNIQUE_ID"}
