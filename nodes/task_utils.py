@@ -37,17 +37,20 @@ def process_kwargs_for_images(kwargs, unique_id, extra_pnginfo):
     original_names_map = {}
 
     def get_orig_name(idx, original_names):
-        if idx < len(original_names) and original_names[idx]:
-            org = str(original_names[idx])
-            if org.lower().endswith(('.png', '.jpg', '.jpeg', '.webp', '.mp4')):
+        if not original_names:
+            return "image"
+        name_idx = min(idx, len(original_names) - 1)
+        if original_names[name_idx]:
+            org = str(original_names[name_idx])
+            if org.lower().endswith(('.png', '.jpg', '.jpeg', '.webp', '.mp4', '.mov', '.webm', '.mkv')):
                 org = org.rsplit('.', 1)[0]
-            return f"_{org}"
-        return ""
+            return org
+        return "image"
 
     for k, v in kwargs.items():
         if v is None:
             continue
-        if k in ["model", "prompt", "seed_value", "nb_results", "output_prefix", "config_json", "minimum_resolution", "aspect_ratio", "output_format", "endpoint", "unique_id", "extra_pnginfo"]:
+        if k in ["model", "prompt", "seed_value", "nb_results", "output_prefix", "config_json", "minimum_resolution", "aspect_ratio", "output_format", "endpoint", "unique_id", "extra_pnginfo", "duration"]:
             continue
 
         prefix_base = k
@@ -68,7 +71,8 @@ def process_kwargs_for_images(kwargs, unique_id, extra_pnginfo):
 
         for i, item in enumerate(flattened_items):
             if hasattr(item, "shape"):
-                attach = ImageUtils.get_attachment_file(item, filename=f"{prefix_base}_{i+1}{get_orig_name(i, original_names)}.png")
+                orig_name = get_orig_name(i, original_names)
+                attach = ImageUtils.get_attachment_file(item, filename=f"{prefix_base}___{orig_name}.png")
                 if attach:
                     attachments_files.append(attach)
 
@@ -228,6 +232,7 @@ class BaseTaskNode:
         minimum_resolution = unwrap(kwargs.get("minimum_resolution", ""))
         aspect_ratio = unwrap(kwargs.get("aspect_ratio", ""))
         output_format = unwrap(kwargs.get("output_format", ""))
+        duration = unwrap(kwargs.get("duration", None))
         unique_id = unwrap(kwargs.get("unique_id"))
         extra_pnginfo = unwrap(kwargs.get("extra_pnginfo"))
 
@@ -236,6 +241,9 @@ class BaseTaskNode:
             "prompt": prompt,
             "seed": seed_value,
         }
+        
+        if duration is not None:
+            arguments["duration"] = duration
         
         if task_type in ["T2I", "I2I", "I2I3", "I2I10", "T2V", "I2V", "I2V2", "I2VR", "V2V", "V2VR"]:
             arguments["num_images"] = nb_results # used for both image and video

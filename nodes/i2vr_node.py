@@ -4,10 +4,6 @@ class I2VRNode(BaseTaskNode):
     @classmethod
     def INPUT_TYPES(cls):
         models = load_models_for_task("I2VR")
-        images = {}
-        for i in range(1, 4):
-            images[f"image_{i}"] = ("IMAGE",)
-            images[f"element_{i}"] = ("IMAGE",)
         
         return {
             "required": {
@@ -20,7 +16,13 @@ class I2VRNode(BaseTaskNode):
             },
             "optional": {
                 "start_image": ("IMAGE",),
-                **images,
+                "end_image": ("IMAGE",),
+                "element_1__frontal_image": ("IMAGE",),
+                "element_1__image_1": ("IMAGE",),
+                "element_1__video": ("IMAGE",),
+                "element_2__frontal_image": ("IMAGE",),
+                "element_2__image_1": ("IMAGE",),
+                "duration": ("INT", {"default": 5, "min": 1, "max": 60}),
                 "aspect_ratio": ("STRING", {"default": ""}),
             },
             "hidden": {"extra_pnginfo": "EXTRA_PNGINFO", "unique_id": "UNIQUE_ID"}
