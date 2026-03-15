@@ -16,7 +16,12 @@ def load_models_for_task(task_name):
                     continue
                 tasks = [x.strip() for x in row[2].split(",")]
                 if task_name in tasks:
-                    models.append(row[0])
+                    model_code = row[0].strip()
+                    model_name = row[1].strip() if len(row) > 1 else ""
+                    if model_name and model_name != model_code:
+                        models.append(f"{model_name} ({model_code})")
+                    else:
+                        models.append(model_code)
     except Exception as e:
         print(f"DeepGen: Failed to load models for task {task_name}: {e}")
     if not models:
@@ -224,6 +229,9 @@ class BaseTaskNode:
             return v[0] if isinstance(v, list) and len(v) > 0 else v
 
         model = unwrap(kwargs.get("model", ""))
+        if isinstance(model, str) and "(" in model and model.endswith(")"):
+            model = model.split("(")[-1].strip(")")
+            
         prompt = unwrap(kwargs.get("prompt", ""))
         seed_value = unwrap(kwargs.get("seed_value", 1000))
         nb_results = unwrap(kwargs.get("nb_results", 1))

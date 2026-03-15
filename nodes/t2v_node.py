@@ -15,6 +15,7 @@ class T2VNode(BaseTaskNode):
             },
             "optional": {
                 "aspect_ratio": ("STRING", {"default": ""}),
+                "duration": ("INT", {"default": 5, "min": 1, "max": 60}),
             },
             "hidden": {"extra_pnginfo": "EXTRA_PNGINFO", "unique_id": "UNIQUE_ID"}
         }
