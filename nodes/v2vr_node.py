@@ -4,11 +4,6 @@ class V2VRNode(BaseTaskNode):
     @classmethod
     def INPUT_TYPES(cls):
         models = load_models_for_task("V2VR")
-        images = {}
-        for i in range(1, 5):
-            images[f"frontal_image_{i}"] = ("IMAGE",)
-            for j in range(1, 4):
-                images[f"reference_image_{i}_{j}"] = ("IMAGE",)
         
         return {
             "required": {
@@ -20,9 +15,14 @@ class V2VRNode(BaseTaskNode):
                 "config_json": ("STRING", {"default": "", "multiline": True}),
             },
             "optional": {
-                "start_image": ("IMAGE",),
-                "end_image": ("IMAGE",),
-                **images,
+                "video": ("IMAGE",),
+                "element_1__frontal_image": ("IMAGE",),
+                "element_1__image_1": ("IMAGE",),
+                "element_2__frontal_image": ("IMAGE",),
+                "element_2__image_1": ("IMAGE",),
+                "element_3__frontal_image": ("IMAGE",),
+                "element_3__image_1": ("IMAGE",),
+                "duration": ("INT", {"default": 5, "min": 1, "max": 60}),
                 "aspect_ratio": ("STRING", {"default": ""}),
             },
             "hidden": {"extra_pnginfo": "EXTRA_PNGINFO", "unique_id": "UNIQUE_ID"}
