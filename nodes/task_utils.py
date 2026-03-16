@@ -311,27 +311,45 @@ class BaseTaskNode:
             arguments["output_format"] = output_format
 
         attachments_files = process_kwargs_for_images(kwargs, unique_id, extra_pnginfo)
-        if attachments_files:
-            arguments["attachments_files"] = attachments_files
             
-        video_urls = []
+        import base64
+        
         for k, v in kwargs.items():
             if k in ["model", "prompt", "seed_value", "nb_results", "output_prefix", "config_json", "minimum_resolution", "aspect_ratio", "output_format", "endpoint", "unique_id", "extra_pnginfo", "duration", "resolution", "generate_audio"]:
                 continue
             
-            # Check if this could be a VIDEO input
-            # VIDEO inputs are typically ComfyVideoMock objects or strings (paths)
-            if not hasattr(v, "shape"): # Not a tensor (IMAGE)
-                path = v.filepath if hasattr(v, "filepath") else str(v)
-                if isinstance(path, str) and os.path.exists(path) and any(path.lower().endswith(ext) for ext in ['.mp4', '.mov', '.webm', '.mkv', '.avi', '.m4v']):
-                    uploaded_url = ImageUtils.upload_file(path)
-                    if uploaded_url:
-                        video_urls.append(uploaded_url)
+            v_list = v if isinstance(v, (list, tuple)) else [v]
+            
+            for item in v_list:
+                # Check if this could be a VIDEO input
+                # VIDEO inputs are typically ComfyVideoMock objects or strings (paths)
+                if item and not hasattr(item, "shape"): # Not a tensor (IMAGE)
+                    path = item.filepath if hasattr(item, "filepath") else str(item)
+                    if isinstance(path, str) and os.path.exists(path) and any(path.lower().endswith(ext) for ext in ['.mp4', '.mov', '.webm', '.mkv', '.avi', '.m4v']):
+                        try:
+                            with open(path, "rb") as f:
+                                video_bytes = f.read()
+                            base64_str = base64.b64encode(video_bytes).decode('utf-8')
+                            
+                            mime_type = "video/mp4"
+                            if path.lower().endswith(".mov"):
+                                mime_type = "video/quicktime"
+                            elif path.lower().endswith(".webm"):
+                                mime_type = "video/webm"
+                                
+                            orig_name = os.path.basename(path)
+                            filename = f"{k}___{orig_name}"
+                            
+                            attachments_files.append({
+                                "attachment_bytes": base64_str,
+                                "attachment_mime_type": mime_type,
+                                "attachment_file_name": filename
+                            })
+                        except Exception as e:
+                            print(f"DeepGen: Failed to encode video attachment: {e}")
                         
-        if video_urls:
-            if "attachments_urls" not in arguments:
-                arguments["attachments_urls"] = []
-            arguments["attachments_urls"].extend(video_urls)
+        if attachments_files:
+            arguments["attachments_files"] = attachments_files
 
         extra_args = parse_config_json(config_json_str)
         arguments.update(extra_args)
