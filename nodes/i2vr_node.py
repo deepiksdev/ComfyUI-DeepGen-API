@@ -22,8 +22,10 @@ class I2VRNode(BaseTaskNode):
                 "element_1__video": ("IMAGE",),
                 "element_2__frontal_image": ("IMAGE",),
                 "element_2__image_1": ("IMAGE",),
-                "duration": ("INT", {"default": 5, "min": 1, "max": 60}),
                 "aspect_ratio": ("STRING", {"default": ""}),
+                "resolution": ("STRING", {"default": ""}),
+                "duration": ("INT", {"default": 5, "min": 1, "max": 60}),
+                "generate_audio": ("BOOLEAN", {"default": True}),
             },
             "hidden": {"extra_pnginfo": "EXTRA_PNGINFO", "unique_id": "UNIQUE_ID"}
         }
