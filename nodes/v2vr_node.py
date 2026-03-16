@@ -15,7 +15,7 @@ class V2VRNode(BaseTaskNode):
                 "config_json": ("STRING", {"default": "", "multiline": True}),
             },
             "optional": {
-                "video": ("IMAGE",),
+                "video": ("VIDEO",),
                 "element_1__frontal_image": ("IMAGE",),
                 "element_1__image_1": ("IMAGE",),
                 "element_2__frontal_image": ("IMAGE",),

@@ -14,7 +14,7 @@ class V2VNode(BaseTaskNode):
                 "config_json": ("STRING", {"default": "", "multiline": True}),
             },
             "optional": {
-                "video": ("IMAGE",),
+                "video": ("VIDEO",),
                 "aspect_ratio": ("STRING", {"default": ""}),
                 "resolution": ("STRING", {"default": ""}),
                 "duration": ("INT", {"default": 5, "min": 1, "max": 60}),
