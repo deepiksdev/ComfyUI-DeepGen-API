@@ -252,7 +252,7 @@ class BaseTaskNode:
             "seed": seed_value,
         }
         
-        if duration is not None:
+        if duration is not None and duration != "":
             arguments["duration"] = duration
             
         if generate_audio is not None:
