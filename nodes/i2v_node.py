@@ -16,7 +16,9 @@ class I2VNode(BaseTaskNode):
             "optional": {
                 "start_image": ("IMAGE",),
                 "aspect_ratio": ("STRING", {"default": ""}),
+                "resolution": ("STRING", {"default": ""}),
                 "duration": ("INT", {"default": 5, "min": 1, "max": 60}),
+                "generate_audio": ("BOOLEAN", {"default": True}),
             },
             "hidden": {"extra_pnginfo": "EXTRA_PNGINFO", "unique_id": "UNIQUE_ID"}
         }

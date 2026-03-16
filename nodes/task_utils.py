@@ -55,7 +55,7 @@ def process_kwargs_for_images(kwargs, unique_id, extra_pnginfo):
     for k, v in kwargs.items():
         if v is None:
             continue
-        if k in ["model", "prompt", "seed_value", "nb_results", "output_prefix", "config_json", "minimum_resolution", "aspect_ratio", "output_format", "endpoint", "unique_id", "extra_pnginfo", "duration"]:
+        if k in ["model", "prompt", "seed_value", "nb_results", "output_prefix", "config_json", "minimum_resolution", "aspect_ratio", "output_format", "endpoint", "unique_id", "extra_pnginfo", "duration", "resolution", "generate_audio"]:
             continue
 
         prefix_base = k
@@ -241,6 +241,8 @@ class BaseTaskNode:
         aspect_ratio = unwrap(kwargs.get("aspect_ratio", ""))
         output_format = unwrap(kwargs.get("output_format", ""))
         duration = unwrap(kwargs.get("duration", None))
+        resolution = unwrap(kwargs.get("resolution", ""))
+        generate_audio = unwrap(kwargs.get("generate_audio", None))
         unique_id = unwrap(kwargs.get("unique_id"))
         extra_pnginfo = unwrap(kwargs.get("extra_pnginfo"))
 
@@ -252,6 +254,9 @@ class BaseTaskNode:
         
         if duration is not None:
             arguments["duration"] = duration
+            
+        if generate_audio is not None:
+            arguments["generate_audio"] = generate_audio
         
         if task_type in ["T2I", "I2I", "I2I3", "I2I10", "T2V", "I2V", "I2V2", "I2VR", "V2V", "V2VR"]:
             arguments["num_images"] = nb_results # used for both image and video
@@ -298,6 +303,9 @@ class BaseTaskNode:
                 arguments["resolution"] = minimum_resolution
             if aspect_ratio:
                 arguments["aspect_ratio"] = aspect_ratio
+                
+        if resolution:
+            arguments["resolution"] = resolution
                 
         if output_format:
             arguments["output_format"] = output_format
