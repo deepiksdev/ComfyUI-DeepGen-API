@@ -323,7 +323,7 @@ class BaseTaskNode:
             for item in v_list:
                 # Check if this could be a VIDEO input
                 # VIDEO inputs are typically ComfyVideoMock objects or strings (paths)
-                if item and not hasattr(item, "shape"): # Not a tensor (IMAGE)
+                if item is not None and not hasattr(item, "shape"): # Not a tensor (IMAGE)
                     path = item.filepath if hasattr(item, "filepath") else str(item)
                     if isinstance(path, str) and os.path.exists(path) and any(path.lower().endswith(ext) for ext in ['.mp4', '.mov', '.webm', '.mkv', '.avi', '.m4v']):
                         try:
