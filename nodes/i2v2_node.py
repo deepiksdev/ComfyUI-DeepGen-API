@@ -16,6 +16,7 @@ class I2V2Node(BaseTaskNode):
             "optional": {
                 "start_image": ("IMAGE",),
                 "end_image": ("IMAGE",),
+                "aspect_ratio": ("STRING", {"default": ""}),
                 "resolution": ("STRING", {"default": ""}),
                 "duration": ("INT", {"default": 5, "min": 1, "max": 60}),
                 "generate_audio": ("BOOLEAN", {"default": True}),
