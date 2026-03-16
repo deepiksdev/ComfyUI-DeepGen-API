@@ -19,7 +19,7 @@ class I2VRNode(BaseTaskNode):
                 "end_image": ("IMAGE",),
                 "element_1__frontal_image": ("IMAGE",),
                 "element_1__image_1": ("IMAGE",),
-                "element_1__video": ("IMAGE",),
+                "element_1__video": ("VIDEO",),
                 "element_2__frontal_image": ("IMAGE",),
                 "element_2__image_1": ("IMAGE",),
                 "aspect_ratio": ("STRING", {"default": ""}),

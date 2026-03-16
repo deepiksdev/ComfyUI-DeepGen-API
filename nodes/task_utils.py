@@ -313,6 +313,25 @@ class BaseTaskNode:
         attachments_files = process_kwargs_for_images(kwargs, unique_id, extra_pnginfo)
         if attachments_files:
             arguments["attachments_files"] = attachments_files
+            
+        video_urls = []
+        for k, v in kwargs.items():
+            if k in ["model", "prompt", "seed_value", "nb_results", "output_prefix", "config_json", "minimum_resolution", "aspect_ratio", "output_format", "endpoint", "unique_id", "extra_pnginfo", "duration", "resolution", "generate_audio"]:
+                continue
+            
+            # Check if this could be a VIDEO input
+            # VIDEO inputs are typically ComfyVideoMock objects or strings (paths)
+            if not hasattr(v, "shape"): # Not a tensor (IMAGE)
+                path = v.filepath if hasattr(v, "filepath") else str(v)
+                if isinstance(path, str) and os.path.exists(path) and any(path.lower().endswith(ext) for ext in ['.mp4', '.mov', '.webm', '.mkv', '.avi', '.m4v']):
+                    uploaded_url = ImageUtils.upload_file(path)
+                    if uploaded_url:
+                        video_urls.append(uploaded_url)
+                        
+        if video_urls:
+            if "attachments_urls" not in arguments:
+                arguments["attachments_urls"] = []
+            arguments["attachments_urls"].extend(video_urls)
 
         extra_args = parse_config_json(config_json_str)
         arguments.update(extra_args)
