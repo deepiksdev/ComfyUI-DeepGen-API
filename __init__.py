@@ -59,6 +59,32 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "DeepGen_LVID": "Load Video",
 }
 
+# Backwards compatibility with workflows created <= 1.2.1
+old_nodes = {
+    "DeepGen_T2T": (T2TNode, "Invoke LLM"),
+    "DeepGen_I2T": (I2TNode, "Review Images"),
+    "DeepGen_T2I": (T2INode, "Generate Image (from Text)"),
+    "DeepGen_I2I": (I2INode, "Edit Image"),
+    "DeepGen_I2I10": (I2I10Node, "Generate Image (from 10 Images)"),
+    "DeepGen_T2V": (T2VNode, "Generate Video (from Text)"),
+    "DisplayFloat_deepgen": (DisplayFloatNode, "Display Float"),
+    "VideoToImage_deepgen": (VideoToImageNode, "Extract Frame From Video"),
+}
+
+for old_key, (cls, old_name) in old_nodes.items():
+    # Create a dynamic subclass so we can change its category without affecting the new node
+    class DeprecatedNode(cls):
+        CATEGORY = "DeepGen/Deprecated"
+        
+        # New ComfyUI deprecation flag
+        DEPRECATED = True
+
+    # Rename the subclass for internal traceback clarity
+    DeprecatedNode.__name__ = f"{cls.__name__}_Deprecated"
+
+    NODE_CLASS_MAPPINGS[old_key] = DeprecatedNode
+    NODE_DISPLAY_NAME_MAPPINGS[old_key] = f"⚠️ [Deprecated] {old_name}"
+
 WEB_DIRECTORY = "./web"
 
 __all__ = ["NODE_CLASS_MAPPINGS", "NODE_DISPLAY_NAME_MAPPINGS", "WEB_DIRECTORY"]
