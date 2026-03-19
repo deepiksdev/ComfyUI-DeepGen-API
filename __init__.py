@@ -38,6 +38,16 @@ NODE_CLASS_MAPPINGS = {
     "DeepGen_F2T0": DisplayFloatNode,
     "DeepGen_VTI0": VideoToImageNode,
     "DeepGen_LVID": LoadVideoNode,
+
+    # Backwards compatibility with workflows created <= 1.2.1
+    "DeepGen_T2T": T2TNode,
+    "DeepGen_I2T": I2TNode,
+    "DeepGen_T2I": T2INode,
+    "DeepGen_I2I": I2INode,
+    "DeepGen_I2I10": I2I10Node,
+    "DeepGen_T2V": T2VNode,
+    "DisplayFloat_deepgen": DisplayFloatNode,
+    "VideoToImage_deepgen": VideoToImageNode,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
