@@ -2,6 +2,7 @@ import logging
 import mmap
 import os
 import xml.etree.ElementTree as ET
+from PIL import Image
 
 def get_xmp_metadata(filepath):
     """
@@ -17,7 +18,46 @@ def get_xmp_metadata(filepath):
         if size == 0:
             return ("", "", "")
             
-        # Use mmap for memory-efficient searching (fast even for huge video files)
+        description = ""
+        dialogues = ""
+        assets_str = ""
+        
+        # 1. Try reading metadata natively for Supported Images (like PNG tEXt chunks) using PIL
+        try:
+            with Image.open(filepath) as img:
+                info = img.info or {}
+                # Some objects might have getxmp() if it's a JPEG or TIFF with XMP
+                xmp_dict = img.getxmp() if hasattr(img, 'getxmp') else {}
+                
+                # Case-insensitive recursive dictionary search
+                def find_key(d, tgt):
+                    tgt_low = tgt.lower()
+                    for k, v in d.items():
+                        if k.lower() == tgt_low or k.lower().endswith(":" + tgt_low):
+                            return v
+                        if isinstance(v, dict):
+                            res = find_key(v, tgt)
+                            if res is not None: return res
+                    return None
+                
+                desc_match = find_key(info, 'Description') or find_key(xmp_dict, 'Description')
+                dial_match = find_key(info, 'Dialogues') or find_key(xmp_dict, 'Dialogues')
+                asset_match = find_key(info, 'Assets') or find_key(xmp_dict, 'Assets')
+                
+                if desc_match: description = str(desc_match)
+                if dial_match: dialogues = str(dial_match)
+                if asset_match:
+                    if isinstance(asset_match, list): assets_str = ", ".join(str(a) for a in asset_match)
+                    else: assets_str = str(asset_match)
+                    
+                if description or dialogues or assets_str:
+                    print(f"[DeepGen XMP] Found native Image metadata: Desc='{description}', Dial='{dialogues}', Assets='{assets_str}'")
+                    return description, dialogues, assets_str
+        except Exception as e:
+            # Not an image or PIL failed, fall through to binary XML search
+            pass
+            
+        # 2. Use mmap for memory-efficient searching (fast for video files or JPGs hiding raw XMP packets)
         with open(filepath, 'rb') as f:
             with mmap.mmap(f.fileno(), length=0, access=mmap.ACCESS_READ) as mm:
                 start = mm.find(b'<x:xmpmeta')
