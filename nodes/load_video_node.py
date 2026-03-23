@@ -30,7 +30,8 @@ class LoadVideoNode(BaseMediaLoaderNode):
         video_files = [f for f in files if any(f.lower().endswith(ext) for ext in video_extensions)]
         
         return {"required": {
-                    "video": (sorted(video_files), {"video_upload": True})
+                    "video": (sorted(video_files), {"video_upload": True}),
+                    "filter": ("STRING", {"default": ""})
                     }
                 }
 
@@ -38,7 +39,7 @@ class LoadVideoNode(BaseMediaLoaderNode):
     RETURN_TYPES = ("VIDEO",)
     FUNCTION = "load_video"
 
-    def load_video(self, video):
+    def load_video(self, video, filter=""):
         video_path = folder_paths.get_annotated_filepath(video)
         
         # Determine a dummy width/height. In a real scenario, you'd probe the video (e.g., using ffprobe or cv2)
