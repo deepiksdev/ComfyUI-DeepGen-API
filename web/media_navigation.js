@@ -43,6 +43,16 @@ app.registerExtension({
                             applyFilter(value);
                         };
                     }
+
+                    if (!mediaWidget.has_navigation_hook) {
+                        const ogMediaCallback = mediaWidget.callback;
+                        mediaWidget.callback = function(value, app, node) {
+                            if (ogMediaCallback) ogMediaCallback.apply(this, arguments);
+                            if (app.graph) app.graph.setDirtyCanvas(true, true);
+                            if (node) node.setDirtyCanvas(true, true);
+                        };
+                        mediaWidget.has_navigation_hook = true;
+                    }
                     
                     const btnWidget = {
                         type: "button_group",
@@ -59,13 +69,13 @@ app.registerExtension({
                             this.can_next = can_next;
                             
                             // Draw Previous Background
-                            ctx.fillStyle = can_prev ? "#3a3a3a" : "#1a1a1a";
+                            ctx.fillStyle = can_prev ? "#3a3a3a" : "#222222";
                             ctx.beginPath();
                             ctx.roundRect(0, y, btnWidth, widget_height, 4);
                             ctx.fill();
                             
                             // Draw Next Background
-                            ctx.fillStyle = can_next ? "#3a3a3a" : "#1a1a1a";
+                            ctx.fillStyle = can_next ? "#3a3a3a" : "#222222";
                             ctx.beginPath();
                             ctx.roundRect(widget_width - btnWidth, y, btnWidth, widget_height, 4);
                             ctx.fill();
@@ -76,10 +86,10 @@ app.registerExtension({
                             ctx.textBaseline = "middle";
                             const textY = y + widget_height / 2;
                             
-                            ctx.fillStyle = can_prev ? "#ffffff" : "#666666";
+                            ctx.fillStyle = can_prev ? "#ffffff" : "#555555";
                             ctx.fillText("< Prev", btnWidth / 2, textY);
                             
-                            ctx.fillStyle = can_next ? "#ffffff" : "#666666";
+                            ctx.fillStyle = can_next ? "#ffffff" : "#555555";
                             ctx.fillText("Next >", widget_width - btnWidth / 2, textY);
                         },
                         mouse: function (event, pos, node) {
@@ -100,12 +110,14 @@ app.registerExtension({
                                 if (x < btnWidth && can_prev) {
                                     mediaWidget.value = values[index - 1];
                                     if (mediaWidget.callback) mediaWidget.callback(mediaWidget.value, app, node);
-                                    app.graph.setDirtyCanvas(true);
+                                    if (node) node.setDirtyCanvas(true, true);
+                                    if (app.graph) app.graph.setDirtyCanvas(true, true);
                                     return true;
                                 } else if (x > widget_width - btnWidth && can_next) {
                                     mediaWidget.value = values[index + 1];
                                     if (mediaWidget.callback) mediaWidget.callback(mediaWidget.value, app, node);
-                                    app.graph.setDirtyCanvas(true);
+                                    if (node) node.setDirtyCanvas(true, true);
+                                    if (app.graph) app.graph.setDirtyCanvas(true, true);
                                     return true;
                                 }
                             }
