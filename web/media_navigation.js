@@ -1,0 +1,143 @@
+import { app } from "../../scripts/app.js";
+
+app.registerExtension({
+    name: "deepgen.MediaControls",
+    async beforeRegisterNodeDef(nodeType, nodeData, app) {
+        if (nodeData.name === "DeepGen_LVID" || nodeData.name === "DeepGen_LIMG") {
+            const onNodeCreated = nodeType.prototype.onNodeCreated;
+            nodeType.prototype.onNodeCreated = function () {
+                const r = onNodeCreated ? onNodeCreated.apply(this, arguments) : undefined;
+
+                // Find the widget handling the media (either video or image)
+                const mediaWidget = this.widgets.find((w) => w.name === "video" || w.name === "image");
+                const filterWidget = this.widgets.find((w) => w.name === "filter");
+                
+                if (mediaWidget) {
+                    if (!mediaWidget.options.all_values) {
+                        mediaWidget.options.all_values = [...(mediaWidget.options.values || [])];
+                    }
+                    
+                    if (filterWidget) {
+                        const applyFilter = (filterText) => {
+                            const filters = (filterText || "").toLowerCase().split(',').map(s => s.trim()).filter(Boolean);
+                            mediaWidget.options.values = mediaWidget.options.all_values.filter(v => {
+                                if (filters.length === 0) return true;
+                                const lowerV = v.toLowerCase();
+                                return filters.some(f => lowerV.includes(f));
+                            });
+                            
+                            if (!mediaWidget.options.values.includes(mediaWidget.value) && mediaWidget.options.values.length > 0) {
+                                mediaWidget.value = mediaWidget.options.values[0];
+                                if (mediaWidget.callback) mediaWidget.callback(mediaWidget.value, app, node);
+                            }
+                            app.graph.setDirtyCanvas(true);
+                        };
+                        
+                        if (filterWidget.value) {
+                            applyFilter(filterWidget.value);
+                        }
+                        
+                        const ogCallback = filterWidget.callback;
+                        filterWidget.callback = function(value, app, node) {
+                            if (ogCallback) ogCallback.apply(this, arguments);
+                            applyFilter(value);
+                        };
+                    }
+
+                    if (!mediaWidget.has_navigation_hook) {
+                        const ogMediaCallback = mediaWidget.callback;
+                        mediaWidget.callback = function(value, app, node) {
+                            if (ogMediaCallback) ogMediaCallback.apply(this, arguments);
+                            if (app.graph) app.graph.setDirtyCanvas(true, true);
+                            if (node) node.setDirtyCanvas(true, true);
+                        };
+                        mediaWidget.has_navigation_hook = true;
+                    }
+                    
+                    const btnWidget = {
+                        type: "button_group",
+                        name: "Browse Media",
+                        draw: function (ctx, node, widget_width, y, widget_height) {
+                            const btnWidth = (widget_width / 2) - 4;
+                            
+                            const values = mediaWidget?.options?.values || [];
+                            const index = values.indexOf(mediaWidget?.value);
+                            const can_prev = index > 0;
+                            const can_next = index !== -1 && index < values.length - 1;
+                            
+                            this.can_prev = can_prev;
+                            this.can_next = can_next;
+                            
+                            // Draw Previous Background
+                            ctx.fillStyle = can_prev ? "#3a3a3a" : "#222222";
+                            ctx.beginPath();
+                            ctx.roundRect(0, y, btnWidth, widget_height, 4);
+                            ctx.fill();
+                            
+                            // Draw Next Background
+                            ctx.fillStyle = can_next ? "#3a3a3a" : "#222222";
+                            ctx.beginPath();
+                            ctx.roundRect(widget_width - btnWidth, y, btnWidth, widget_height, 4);
+                            ctx.fill();
+                            
+                            // Draw Text
+                            ctx.font = "14px Arial";
+                            ctx.textAlign = "center";
+                            ctx.textBaseline = "middle";
+                            const textY = y + widget_height / 2;
+                            
+                            ctx.fillStyle = can_prev ? "#ffffff" : "#555555";
+                            ctx.fillText("< Prev", btnWidth / 2, textY);
+                            
+                            ctx.fillStyle = can_next ? "#ffffff" : "#555555";
+                            ctx.fillText("Next >", widget_width - btnWidth / 2, textY);
+                        },
+                        mouse: function (event, pos, node) {
+                            if (event.type === "down" || event.type === "mousedown" || event.type === "pointerdown") {
+                                const widget_width = node.size[0];
+                                // Give buttons a little spacing from the center
+                                const btnWidth = (widget_width / 2) - 4;
+                                
+                                const x = pos[0];
+                                
+                                const values = mediaWidget?.options?.values || [];
+                                const index = values.indexOf(mediaWidget?.value);
+                                
+                                // Re-evaluate logic instead of strictly relying on this.can_prev
+                                const can_prev = index > 0;
+                                const can_next = index !== -1 && index < values.length - 1;
+                                
+                                if (x < btnWidth && can_prev) {
+                                    mediaWidget.value = values[index - 1];
+                                    if (mediaWidget.callback) mediaWidget.callback(mediaWidget.value, app, node);
+                                    if (node) node.setDirtyCanvas(true, true);
+                                    if (app.graph) app.graph.setDirtyCanvas(true, true);
+                                    return true;
+                                } else if (x > widget_width - btnWidth && can_next) {
+                                    mediaWidget.value = values[index + 1];
+                                    if (mediaWidget.callback) mediaWidget.callback(mediaWidget.value, app, node);
+                                    if (node) node.setDirtyCanvas(true, true);
+                                    if (app.graph) app.graph.setDirtyCanvas(true, true);
+                                    return true;
+                                }
+                            }
+                            return false;
+                        },
+                        computeSize: function (width) {
+                            return [width, LiteGraph.NODE_WIDGET_HEIGHT]; // typically 20 or 24
+                        }
+                    };
+                    
+                    // ComfyUI / LiteGraph extension: push the widget or use addCustomWidget
+                    if (this.addCustomWidget) {
+                        this.addCustomWidget(btnWidget);
+                    } else {
+                        this.widgets.push(btnWidget);
+                    }
+                }
+
+                return r;
+            };
+        }
+    },
+});

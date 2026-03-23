@@ -1,6 +1,7 @@
 import os
 import folder_paths
-import hashlib
+
+from .base_media_loader import BaseMediaLoaderNode
 
 class ComfyVideoMock:
     def __init__(self, filepath, width=512, height=512):
@@ -19,7 +20,7 @@ class ComfyVideoMock:
     def __str__(self):
         return self.filepath
 
-class LoadVideoNode:
+class LoadVideoNode(BaseMediaLoaderNode):
     @classmethod
     def INPUT_TYPES(cls):
         input_dir = folder_paths.get_input_directory()
@@ -29,7 +30,8 @@ class LoadVideoNode:
         video_files = [f for f in files if any(f.lower().endswith(ext) for ext in video_extensions)]
         
         return {"required": {
-                    "video": (sorted(video_files), {"video_upload": True})
+                    "video": (sorted(video_files), {"video_upload": True}),
+                    "filter": ("STRING", {"default": ""})
                     }
                 }
 
@@ -37,7 +39,7 @@ class LoadVideoNode:
     RETURN_TYPES = ("VIDEO",)
     FUNCTION = "load_video"
 
-    def load_video(self, video):
+    def load_video(self, video, filter=""):
         video_path = folder_paths.get_annotated_filepath(video)
         
         # Determine a dummy width/height. In a real scenario, you'd probe the video (e.g., using ffprobe or cv2)
@@ -47,17 +49,3 @@ class LoadVideoNode:
         
         mock_video = ComfyVideoMock(video_path, width, height)
         return (mock_video,)
-
-    @classmethod
-    def IS_CHANGED(cls, video):
-        image_path = folder_paths.get_annotated_filepath(video)
-        m = hashlib.sha256()
-        with open(image_path, 'rb') as f:
-            m.update(f.read())
-        return m.digest().hex()
-
-    @classmethod
-    def VALIDATE_INPUTS(cls, video):
-        if not folder_paths.exists_annotated_filepath(video):
-            return "Invalid video file: {}".format(video)
-        return True
