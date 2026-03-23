@@ -1,6 +1,7 @@
 import os
 import folder_paths
-import hashlib
+
+from .base_media_loader import BaseMediaLoaderNode
 
 class ComfyVideoMock:
     def __init__(self, filepath, width=512, height=512):
@@ -19,7 +20,7 @@ class ComfyVideoMock:
     def __str__(self):
         return self.filepath
 
-class LoadVideoNode:
+class LoadVideoNode(BaseMediaLoaderNode):
     @classmethod
     def INPUT_TYPES(cls):
         input_dir = folder_paths.get_input_directory()
@@ -47,17 +48,3 @@ class LoadVideoNode:
         
         mock_video = ComfyVideoMock(video_path, width, height)
         return (mock_video,)
-
-    @classmethod
-    def IS_CHANGED(cls, video):
-        image_path = folder_paths.get_annotated_filepath(video)
-        m = hashlib.sha256()
-        with open(image_path, 'rb') as f:
-            m.update(f.read())
-        return m.digest().hex()
-
-    @classmethod
-    def VALIDATE_INPUTS(cls, video):
-        if not folder_paths.exists_annotated_filepath(video):
-            return "Invalid video file: {}".format(video)
-        return True

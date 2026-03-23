@@ -1,24 +1,25 @@
 import { app } from "../../scripts/app.js";
 
 app.registerExtension({
-    name: "deepgen.LoadVideoControls",
+    name: "deepgen.MediaControls",
     async beforeRegisterNodeDef(nodeType, nodeData, app) {
-        if (nodeData.name === "DeepGen_LVID") {
+        if (nodeData.name === "DeepGen_LVID" || nodeData.name === "DeepGen_LIMG") {
             const onNodeCreated = nodeType.prototype.onNodeCreated;
             nodeType.prototype.onNodeCreated = function () {
                 const r = onNodeCreated ? onNodeCreated.apply(this, arguments) : undefined;
 
-                const videoWidget = this.widgets.find((w) => w.name === "video");
+                // Find the widget handling the media (either video or image)
+                const mediaWidget = this.widgets.find((w) => w.name === "video" || w.name === "image");
                 
-                if (videoWidget) {
+                if (mediaWidget) {
                     const btnWidget = {
                         type: "button_group",
-                        name: "Browse Videos",
+                        name: "Browse Media",
                         draw: function (ctx, node, widget_width, y, widget_height) {
                             const btnWidth = (widget_width / 2) - 4;
                             
-                            const values = videoWidget?.options?.values || [];
-                            const index = values.indexOf(videoWidget?.value);
+                            const values = mediaWidget?.options?.values || [];
+                            const index = values.indexOf(mediaWidget?.value);
                             const can_prev = index > 0;
                             const can_next = index !== -1 && index < values.length - 1;
                             
@@ -57,21 +58,21 @@ app.registerExtension({
                                 
                                 const x = pos[0];
                                 
-                                const values = videoWidget?.options?.values || [];
-                                const index = values.indexOf(videoWidget?.value);
+                                const values = mediaWidget?.options?.values || [];
+                                const index = values.indexOf(mediaWidget?.value);
                                 
                                 // Re-evaluate logic instead of strictly relying on this.can_prev
                                 const can_prev = index > 0;
                                 const can_next = index !== -1 && index < values.length - 1;
                                 
                                 if (x < btnWidth && can_prev) {
-                                    videoWidget.value = values[index - 1];
-                                    if (videoWidget.callback) videoWidget.callback(videoWidget.value, app, node);
+                                    mediaWidget.value = values[index - 1];
+                                    if (mediaWidget.callback) mediaWidget.callback(mediaWidget.value, app, node);
                                     app.graph.setDirtyCanvas(true);
                                     return true;
                                 } else if (x > widget_width - btnWidth && can_next) {
-                                    videoWidget.value = values[index + 1];
-                                    if (videoWidget.callback) videoWidget.callback(videoWidget.value, app, node);
+                                    mediaWidget.value = values[index + 1];
+                                    if (mediaWidget.callback) mediaWidget.callback(mediaWidget.value, app, node);
                                     app.graph.setDirtyCanvas(true);
                                     return true;
                                 }

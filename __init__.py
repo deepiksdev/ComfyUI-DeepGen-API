@@ -18,6 +18,7 @@ from .nodes.v2vr_node import V2VRNode
 from .nodes.display_node import DisplayFloatNode
 from .nodes.video_to_image_node import VideoToImageNode
 from .nodes.load_video_node import LoadVideoNode
+from .nodes.load_image_node import LoadImageNode
 # Node order here controls display order in ComfyUI, provided ALL keys have the SAME EXACT LENGTH.
 # ComfyUI sorts first by len(key) AND THEN by insertion order in the dict.
 # We pad all keys to exactly 12 characters (e.g. DeepGen_T2T0) to match.
@@ -38,6 +39,7 @@ NODE_CLASS_MAPPINGS = {
     "DeepGen_F2T0": DisplayFloatNode,
     "DeepGen_VTI0": VideoToImageNode,
     "DeepGen_LVID": LoadVideoNode,
+    "DeepGen_LIMG": LoadImageNode,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -57,6 +59,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "DeepGen_F2T0": "Display Float",
     "DeepGen_VTI0": "Extract Frame From Video",
     "DeepGen_LVID": "Load Video",
+    "DeepGen_LIMG": "Load Image",
 }
 
 # Backwards compatibility with workflows created <= 1.2.1
