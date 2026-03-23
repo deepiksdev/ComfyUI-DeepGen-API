@@ -5,6 +5,7 @@ from PIL import Image, ImageOps
 
 import folder_paths
 from .base_media_loader import BaseMediaLoaderNode
+from .xmp_utils import get_xmp_metadata
 
 class LoadImageNode(BaseMediaLoaderNode):
     @classmethod
@@ -22,7 +23,8 @@ class LoadImageNode(BaseMediaLoaderNode):
                 }
 
     CATEGORY = "DeepGen/Loaders"
-    RETURN_TYPES = ("IMAGE", "MASK")
+    RETURN_TYPES = ("IMAGE", "MASK", "STRING", "STRING", "STRING")
+    RETURN_NAMES = ("image", "mask", "description", "dialogues", "assets")
     FUNCTION = "load_image"
 
     def load_image(self, image, filter=""):
@@ -50,4 +52,6 @@ class LoadImageNode(BaseMediaLoaderNode):
             
         mask_tensor = torch.from_numpy(mask).unsqueeze(0)
         
-        return (image_tensor, mask_tensor)
+        description, dialogues, assets = get_xmp_metadata(image_path)
+        
+        return (image_tensor, mask_tensor, description, dialogues, assets)

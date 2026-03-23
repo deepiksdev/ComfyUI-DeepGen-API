@@ -2,6 +2,7 @@ import os
 import folder_paths
 
 from .base_media_loader import BaseMediaLoaderNode
+from .xmp_utils import get_xmp_metadata
 
 class ComfyVideoMock:
     def __init__(self, filepath, width=512, height=512):
@@ -36,7 +37,8 @@ class LoadVideoNode(BaseMediaLoaderNode):
                 }
 
     CATEGORY = "DeepGen/Loaders"
-    RETURN_TYPES = ("VIDEO",)
+    RETURN_TYPES = ("VIDEO", "STRING", "STRING", "STRING")
+    RETURN_NAMES = ("video", "description", "dialogues", "assets")
     FUNCTION = "load_video"
 
     def load_video(self, video, filter=""):
@@ -48,4 +50,7 @@ class LoadVideoNode(BaseMediaLoaderNode):
         height = 512
         
         mock_video = ComfyVideoMock(video_path, width, height)
-        return (mock_video,)
+        
+        description, dialogues, assets = get_xmp_metadata(video_path)
+        
+        return (mock_video, description, dialogues, assets)
