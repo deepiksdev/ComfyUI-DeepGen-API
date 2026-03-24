@@ -10,40 +10,8 @@ app.registerExtension({
 
                 // Find the widget handling the media (either video or image)
                 const mediaWidget = this.widgets.find((w) => w.name === "video" || w.name === "image");
-                const filterWidget = this.widgets.find((w) => w.name === "filter");
                 
                 if (mediaWidget) {
-                    if (!mediaWidget.options.all_values) {
-                        mediaWidget.options.all_values = [...(mediaWidget.options.values || [])];
-                    }
-                    
-                    if (filterWidget) {
-                        const applyFilter = (filterText) => {
-                            const filters = (filterText || "").toLowerCase().split(',').map(s => s.trim()).filter(Boolean);
-                            mediaWidget.options.values = mediaWidget.options.all_values.filter(v => {
-                                if (filters.length === 0) return true;
-                                const lowerV = v.toLowerCase();
-                                return filters.some(f => lowerV.includes(f));
-                            });
-                            
-                            if (!mediaWidget.options.values.includes(mediaWidget.value) && mediaWidget.options.values.length > 0) {
-                                mediaWidget.value = mediaWidget.options.values[0];
-                                if (mediaWidget.callback) mediaWidget.callback(mediaWidget.value, app, node);
-                            }
-                            app.graph.setDirtyCanvas(true);
-                        };
-                        
-                        if (filterWidget.value) {
-                            applyFilter(filterWidget.value);
-                        }
-                        
-                        const ogCallback = filterWidget.callback;
-                        filterWidget.callback = function(value, app, node) {
-                            if (ogCallback) ogCallback.apply(this, arguments);
-                            applyFilter(value);
-                        };
-                    }
-
                     if (!mediaWidget.has_navigation_hook) {
                         const ogMediaCallback = mediaWidget.callback;
                         mediaWidget.callback = function(value, app, node) {

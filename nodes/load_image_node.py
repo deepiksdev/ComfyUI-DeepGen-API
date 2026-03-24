@@ -17,8 +17,7 @@ class LoadImageNode(BaseMediaLoaderNode):
         image_files = [f for f in files if any(f.lower().endswith(ext) for ext in image_extensions)]
         
         return {"required": {
-                    "image": (sorted(image_files), {"image_upload": True}),
-                    "filter": ("STRING", {"default": ""})
+                    "image": (sorted(image_files), {"image_upload": True})
                     }
                 }
 
@@ -27,7 +26,7 @@ class LoadImageNode(BaseMediaLoaderNode):
     RETURN_NAMES = ("image", "mask", "description", "dialogues", "assets")
     FUNCTION = "load_image"
 
-    def load_image(self, image, filter=""):
+    def load_image(self, image):
         image_path = folder_paths.get_annotated_filepath(image)
         
         # Load image via PIL
