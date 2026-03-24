@@ -17,7 +17,8 @@ class LoadImageNode(BaseMediaLoaderNode):
         image_files = [f for f in files if any(f.lower().endswith(ext) for ext in image_extensions)]
         
         return {"required": {
-                    "image": (sorted(image_files), {"image_upload": True})
+                    "image": (sorted(image_files), {"image_upload": True}),
+                    "force_height": ("INT", {"default": 0, "min": 0, "max": 8192, "step": 8})
                     }
                 }
 
@@ -26,12 +27,17 @@ class LoadImageNode(BaseMediaLoaderNode):
     RETURN_NAMES = ("image", "mask", "description", "dialogues", "assets")
     FUNCTION = "load_image"
 
-    def load_image(self, image):
+    def load_image(self, image, force_height=0):
         image_path = folder_paths.get_annotated_filepath(image)
         
         # Load image via PIL
         img = Image.open(image_path)
         img = ImageOps.exif_transpose(img)
+        
+        # Resize if force_height is provided
+        if force_height > 0 and img.height != force_height:
+            new_width = int((force_height / img.height) * img.width)
+            img = img.resize((new_width, force_height), Image.LANCZOS)
         
         # Convert based on mode
         if img.mode == 'I':
