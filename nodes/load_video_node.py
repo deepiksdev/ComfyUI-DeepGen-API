@@ -70,18 +70,27 @@ class LoadVideoNode(BaseMediaLoaderNode):
             temp_path = os.path.join(folder_paths.get_temp_directory(), temp_filename)
             
             if not os.path.exists(temp_path):
-                print(f"DeepGen: Resizing video to {width}x{height}...")
-                cmd = [
-                    "ffmpeg", "-y", "-i", video_path,
-                    "-vf", f"scale={width}:{height}",
-                    "-c:v", "libx264", "-crf", "18",
-                    "-c:a", "copy",
-                    temp_path
-                ]
+                print(f"DeepGen: Resizing video to {width}x{height} using cv2...")
                 try:
-                    subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                    cap_in = cv2.VideoCapture(video_path)
+                    fps = cap_in.get(cv2.CAP_PROP_FPS)
+                    if fps == 0 or fps != fps:
+                        fps = 25.0
+                    
+                    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+                    out = cv2.VideoWriter(temp_path, fourcc, fps, (width, height))
+                    
+                    while True:
+                        ret, frame = cap_in.read()
+                        if not ret:
+                            break
+                        resized_frame = cv2.resize(frame, (width, height), interpolation=cv2.INTER_LANCZOS4)
+                        out.write(resized_frame)
+                        
+                    cap_in.release()
+                    out.release()
                 except Exception as e:
-                    print(f"DeepGen: Failed to resize video using ffmpeg: {e}")
+                    print(f"DeepGen: Failed to resize video using cv2: {e}")
                     temp_path = video_path
                     width = orig_width
                     height = orig_height
