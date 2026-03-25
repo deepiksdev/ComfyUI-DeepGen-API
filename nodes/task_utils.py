@@ -253,7 +253,7 @@ class BaseTaskNode:
         }
         
         if duration is not None:
-            arguments["duration"] = duration
+            arguments["duration"] = str(duration)
             
         if generate_audio is not None:
             arguments["generate_audio"] = generate_audio
