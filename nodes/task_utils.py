@@ -395,7 +395,7 @@ class BaseTaskNode:
                     credits_out = float(cred or 0.0)
                     return (video_path, prefixed_model, credits_out)
 
-            elif task_type in ["T2T", "I2T"]:
+            elif task_type in ["T2T", "I2T", "V2T"]:
                 arguments["stream"] = False
                 result = ApiHandler.submit_and_get_result(model, arguments)
                 res_obj = result[0] if isinstance(result, list) and len(result) > 0 else result
