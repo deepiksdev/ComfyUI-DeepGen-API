@@ -4,6 +4,7 @@ import logging
 from .nodes import api_routes
 from .nodes.t2t_node import T2TNode
 from .nodes.i2t_node import I2TNode
+from .nodes.v2t_node import V2TNode
 from .nodes.t2i_node import T2INode
 from .nodes.i2i_node import I2INode
 from .nodes.i2i3_node import I2I3Node
@@ -25,6 +26,7 @@ from .nodes.load_image_node import LoadImageNode
 NODE_CLASS_MAPPINGS = {
     "DeepGen_T2T0": T2TNode,
     "DeepGen_I2T0": I2TNode,
+    "DeepGen_V2T0": V2TNode,
     "DeepGen_T2I0": T2INode,
     "DeepGen_I2I0": I2INode,
     "DeepGen_I2I3": I2I3Node,
@@ -45,6 +47,7 @@ NODE_CLASS_MAPPINGS = {
 NODE_DISPLAY_NAME_MAPPINGS = {
     "DeepGen_T2T0": "Invoke LLM",
     "DeepGen_I2T0": "Review Images",
+    "DeepGen_V2T0": "Review Video",
     "DeepGen_T2I0": "Generate Image (from Text)",
     "DeepGen_I2I0": "Edit Image",
     "DeepGen_I2I3": "Generate Image (from 3 Images)",
