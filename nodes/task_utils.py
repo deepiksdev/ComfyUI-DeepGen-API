@@ -258,14 +258,15 @@ class BaseTaskNode:
         if generate_audio is not None:
             arguments["generate_audio"] = generate_audio
         
-        if task_type in ["T2I", "I2I", "I2I3", "I2I10", "T2V", "I2V", "I2V2", "I2VR", "V2V", "V2VR"]:
+        if task_type in ["T2I", "I2I", "I2I3", "I2I10", "T2V", "I2V", "I2V2", "I2V3", "I2V7", "I2VR", "V2V", "V2VR"]:
             arguments["num_images"] = nb_results # used for both image and video
             
-        if task_type in ["T2V", "I2V", "I2V2", "I2VR", "V2V", "V2VR"]:
+        if task_type in ["T2V", "I2V", "I2V2", "I2V3", "I2V7", "I2VR", "V2V", "V2VR"]:
             arguments["queue"] = True
             
         csv_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "models.csv")
         resolutions_supported, aspect_ratios_supported, pixel_sizes_supported = [], [], []
+        durations_supported = []
         try:
             with open(csv_path, mode='r', encoding='utf-8') as f:
                 reader = csv.reader(f)
@@ -277,9 +278,28 @@ class BaseTaskNode:
                             resolutions_supported = [x.strip() for x in row[4].split(",")]
                         if len(row) > 5 and row[5].strip():
                             pixel_sizes_supported = [x.strip() for x in row[5].split(",")]
+                        if len(row) > 9 and row[9].strip():
+                            durations_supported = [x.strip() for x in row[9].split(",")]
                         break
         except Exception:
             pass
+
+        import re
+        if duration is not None and durations_supported:
+            parsed_durations = []
+            for d_str in durations_supported:
+                match = re.search(r'\d+', d_str)
+                if match:
+                    parsed_durations.append((int(match.group()), d_str))
+            
+            if parsed_durations:
+                parsed_durations.sort(key=lambda x: x[0])
+                selected_d_str = parsed_durations[-1][1]
+                for d_int, d_str in parsed_durations:
+                    if d_int >= duration:
+                        selected_d_str = d_str
+                        break
+                arguments["duration"] = selected_d_str
 
         if minimum_resolution and aspect_ratio and (resolutions_supported or pixel_sizes_supported):
             target_size = parse_res_k(minimum_resolution)
@@ -355,7 +375,7 @@ class BaseTaskNode:
         arguments.update(extra_args)
 
         try:
-            if task_type in ["T2V", "I2V", "I2V2", "I2VR", "V2V", "V2VR"]:
+            if task_type in ["T2V", "I2V", "I2V2", "I2V3", "I2V7", "I2VR", "V2V", "V2VR"]:
                 if nb_results > 1:
                     results = ApiHandler.submit_multiple_and_get_results(model, arguments, nb_results)
                     results = self._poll_video_results(results)
