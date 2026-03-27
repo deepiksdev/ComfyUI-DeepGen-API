@@ -1,9 +1,9 @@
 from .task_utils import BaseTaskNode, load_models_for_task
 
-class I2V3Node(BaseTaskNode):
+class I2V7Node(BaseTaskNode):
     @classmethod
     def INPUT_TYPES(cls):
-        models = load_models_for_task("I2V3")
+        models = load_models_for_task("I2V7")
         
         return {
             "required": {
@@ -18,6 +18,10 @@ class I2V3Node(BaseTaskNode):
                 "image_1": ("IMAGE",),
                 "image_2": ("IMAGE",),
                 "image_3": ("IMAGE",),
+                "image_4": ("IMAGE",),
+                "image_5": ("IMAGE",),
+                "image_6": ("IMAGE",),
+                "image_7": ("IMAGE",),
                 "aspect_ratio": ("STRING", {"default": ""}),
                 "resolution": ("STRING", {"default": ""}),
                 "duration": ("INT", {"default": 5, "min": 1, "max": 60}),
@@ -32,4 +36,4 @@ class I2V3Node(BaseTaskNode):
     CATEGORY = "DeepGen/Generators"
 
     def generate(self, **kwargs):
-        return self.run_generation("I2V3", **kwargs)
+        return self.run_generation("I2V7", **kwargs)
