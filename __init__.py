@@ -13,6 +13,7 @@ from .nodes.t2v_node import T2VNode
 from .nodes.i2v_node import I2VNode
 from .nodes.i2v2_node import I2V2Node
 from .nodes.i2v3_node import I2V3Node
+from .nodes.i2v7_node import I2V7Node
 from .nodes.i2vr_node import I2VRNode
 from .nodes.v2v_node import V2VNode
 from .nodes.v2vr_node import V2VRNode
@@ -35,6 +36,7 @@ NODE_CLASS_MAPPINGS = {
     "DeepGen_I2V0": I2VNode,
     "DeepGen_I2V2": I2V2Node,
     "DeepGen_I2V3": I2V3Node,
+    "DeepGen_I2V7": I2V7Node,
     "DeepGen_I2VR": I2VRNode,
     "DeepGen_V2V0": V2VNode,
     "DeepGen_V2VR": V2VRNode,
@@ -56,6 +58,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "DeepGen_I2V0": "Generate Video (from Start Frame)",
     "DeepGen_I2V2": "Generate Video (from Start and End Frames)",
     "DeepGen_I2V3": "Generate Video (from Start Frame and 3 Images)",
+    "DeepGen_I2V7": "Generate Video (from Start Frame and 7 Images)",
     "DeepGen_I2VR": "Generate Video (from Images with Elements)",
     "DeepGen_V2V0": "Edit Video",
     "DeepGen_V2VR": "Edit Video (with Elements)",
