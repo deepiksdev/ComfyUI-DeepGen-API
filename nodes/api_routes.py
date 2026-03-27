@@ -47,10 +47,7 @@ async def get_deepgen_models(request):
                     num_elements = int(row[8]) if row[8].strip() else 0
                 except ValueError:
                     num_elements = 0
-                try:
-                    num_frames = int(row[9]) if row[9].strip() else 0
-                except ValueError:
-                    num_frames = 0
+                num_frames = [x.strip() for x in row[9].split(",")] if row[9].strip() else []
                     
                 models_info.append({
                     "value": row[0],
