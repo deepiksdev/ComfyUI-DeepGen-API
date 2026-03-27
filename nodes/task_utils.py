@@ -258,10 +258,10 @@ class BaseTaskNode:
         if generate_audio is not None:
             arguments["generate_audio"] = generate_audio
         
-        if task_type in ["T2I", "I2I", "I2I3", "I2I10", "T2V", "I2V", "I2V2", "I2VR", "V2V", "V2VR"]:
+        if task_type in ["T2I", "I2I", "I2I3", "I2I10", "T2V", "I2V", "I2V2", "I2V3", "I2V7", "I2VR", "V2V", "V2VR"]:
             arguments["num_images"] = nb_results # used for both image and video
             
-        if task_type in ["T2V", "I2V", "I2V2", "I2VR", "V2V", "V2VR"]:
+        if task_type in ["T2V", "I2V", "I2V2", "I2V3", "I2V7", "I2VR", "V2V", "V2VR"]:
             arguments["queue"] = True
             
         csv_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "models.csv")
@@ -375,7 +375,7 @@ class BaseTaskNode:
         arguments.update(extra_args)
 
         try:
-            if task_type in ["T2V", "I2V", "I2V2", "I2VR", "V2V", "V2VR"]:
+            if task_type in ["T2V", "I2V", "I2V2", "I2V3", "I2V7", "I2VR", "V2V", "V2VR"]:
                 if nb_results > 1:
                     results = ApiHandler.submit_multiple_and_get_results(model, arguments, nb_results)
                     results = self._poll_video_results(results)
